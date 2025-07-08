@@ -1,46 +1,34 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Activity, Eye, EyeOff } from 'lucide-react';
 
-export const Register: React.FC = () => {
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-
     setIsLoading(true);
-
-    try {
-      await register(email, password);
+    // Universal admin login (bypass Firebase)
+    if (email === 'admin@dentalcare.com' && password === '123456') {
+      // Simula usuário autenticado no contexto
+      localStorage.setItem('admin-universal', 'true');
       navigate('/');
-    } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        setError('Este email já está sendo usado');
-      } else if (error.code === 'auth/weak-password') {
-        setError('A senha é muito fraca');
-      } else {
-        setError('Erro ao criar conta. Tente novamente.');
-      }
+      setIsLoading(false);
+      return;
+    }
+    try {
+      await login(email, password);
+      navigate('/');
+    } catch {
+      setError('Email ou senha incorretos. Use: admin@dentalcare.com / 123456');
     } finally {
       setIsLoading(false);
     }
@@ -55,12 +43,11 @@ export const Register: React.FC = () => {
               <Activity className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Criar Conta</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">DentalCare</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Cadastre-se no DentalCare
+            Sistema de Agendamento de Consultas
           </p>
         </div>
-
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
             <div className="space-y-4">
@@ -78,7 +65,6 @@ export const Register: React.FC = () => {
                   placeholder="seu@email.com"
                 />
               </div>
-
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Senha
@@ -102,37 +88,11 @@ export const Register: React.FC = () => {
                   </button>
                 </div>
               </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Confirmar Senha
-                </label>
-                <div className="relative">
-                  <input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
               {error && (
                 <div className="text-red-600 dark:text-red-400 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
                   {error}
                 </div>
               )}
-
               <button
                 type="submit"
                 disabled={isLoading}
@@ -141,17 +101,16 @@ export const Register: React.FC = () => {
                 {isLoading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
-                  'Criar Conta'
+                  'Entrar'
                 )}
               </button>
             </div>
           </div>
-
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Já tem uma conta?{' '}
-              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
-                Entre aqui
+              Não tem uma conta?{' '}
+              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
+                Cadastre-se aqui
               </Link>
             </p>
           </div>
@@ -160,3 +119,5 @@ export const Register: React.FC = () => {
     </div>
   );
 };
+
+export default Login;

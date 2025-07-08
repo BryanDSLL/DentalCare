@@ -5,13 +5,14 @@ import { getFirestore } from 'firebase/firestore';
 const firebaseConfig = {
   // Replace with your Firebase config
   apiKey: "demo-key",
-  authDomain: "demo-project.firebaseapp.com",
-  projectId: "demo-project",
-  storageBucket: "demo-project.appspot.com",
+  authDomain: "dental-clinic-demo.firebaseapp.com",
+  projectId: "dental-clinic-demo",
+  storageBucket: "dental-clinic-demo.appspot.com",
   messagingSenderId: "123456789",
-  appId: "demo-app-id"
+  appId: "1:123456789:web:abcdef123456"
 };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export default app;
