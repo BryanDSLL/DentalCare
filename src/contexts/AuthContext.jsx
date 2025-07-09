@@ -1,13 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { auth } from '../firebase';
+import PropTypes from 'prop-types';
 
 const AuthContext = createContext();
+const API_URL = 'http://172.16.31.176:3001/api';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -21,25 +16,57 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const signup = (email, password) => {
-    return createUserWithEmailAndPassword(auth, email, password);
-  };
-
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
-  };
-
-  const logout = () => {
-    return signOut(auth);
-  };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
+  // Função para registrar usuário
+  const signup = async (email, password) => {
+    const res = await fetch(`${API_URL}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
     });
+    if (!res.ok) throw new Error('Erro ao registrar');
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    setCurrentUser(data.user);
+  };
 
-    return unsubscribe;
+  // Função para login
+  const login = async (email, password) => {
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) throw new Error('Email ou senha inválidos');
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    setCurrentUser(data.user);
+  };
+
+  // Função para logout
+  const logout = () => {
+    localStorage.removeItem('token');
+    setCurrentUser(null);
+  };
+
+  // Checa usuário autenticado ao iniciar
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    fetch(`${API_URL}/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setCurrentUser(data?.user || null);
+        setLoading(false);
+      })
+      .catch(() => {
+        setCurrentUser(null);
+        setLoading(false);
+      });
   }, []);
 
   const value = {
@@ -54,4 +81,8 @@ export const AuthProvider = ({ children }) => {
       {!loading && children}
     </AuthContext.Provider>
   );
+};
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

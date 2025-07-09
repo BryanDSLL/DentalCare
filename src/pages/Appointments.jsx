@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { appointmentService } from '../services/appointmentService';
-import { patientService } from '../services/patientService';
+import { consultasService } from '../services/consultasService';
+import { pacientesService } from '../services/pacientesService';
 import Modal from '../components/Modal';
 import { Calendar, Clock, Plus, Edit, Trash2 } from 'lucide-react';
 
@@ -25,7 +25,7 @@ const Appointments = () => {
     const loadAppointmentsAsync = async () => {
       try {
         const date = new Date(selectedDate);
-        const appointmentsData = await appointmentService.getAppointments(date);
+        const appointmentsData = await consultasService.getAppointments(date);
         setAppointments(appointmentsData);
       } catch (error) {
         console.error('Error loading appointments:', error);
@@ -41,7 +41,7 @@ const Appointments = () => {
   const loadAppointments = async () => {
     try {
       const date = new Date(selectedDate);
-      const appointmentsData = await appointmentService.getAppointments(date);
+      const appointmentsData = await consultasService.getAppointments(date);
       setAppointments(appointmentsData);
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -52,7 +52,7 @@ const Appointments = () => {
 
   const loadPatients = async () => {
     try {
-      const patientsData = await patientService.getPatients();
+      const patientsData = await pacientesService.getPatients();
       setPatients(patientsData);
     } catch (error) {
       console.error('Error loading patients:', error);
@@ -69,9 +69,9 @@ const Appointments = () => {
       };
 
       if (editingAppointment) {
-        await appointmentService.updateAppointment(editingAppointment.id, appointmentData);
+        await consultasService.updateAppointment(editingAppointment.id, appointmentData);
       } else {
-        await appointmentService.createAppointment(appointmentData);
+        await consultasService.createAppointment(appointmentData);
       }
 
       setIsModalOpen(false);
@@ -109,7 +109,7 @@ const Appointments = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja cancelar esta consulta?')) {
       try {
-        await appointmentService.deleteAppointment(id);
+        await consultasService.deleteAppointment(id);
         loadAppointments();
       } catch (error) {
         console.error('Error deleting appointment:', error);

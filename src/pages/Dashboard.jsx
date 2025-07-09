@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { appointmentService } from '../services/appointmentService';
+import { consultasService } from '../services/consultasService';
 import { Calendar, Clock, User, Phone } from 'lucide-react';
 
 const Dashboard = () => {
@@ -18,11 +18,11 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const today = new Date();
-      const appointments = await appointmentService.getAppointments(today);
+      const appointments = await consultasService.getAppointments(today);
       setTodaysAppointments(appointments);
       
       // Calculate stats
-      const allAppointments = await appointmentService.getAppointments();
+      const allAppointments = await consultasService.getAppointments();
       const upcoming = allAppointments.filter(apt => 
         apt.date.toDate ? apt.date.toDate() > today : new Date(apt.date) > today
       ).length;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { patientService } from '../services/patientService';
+import { pacientesService } from '../services/pacientesService';
 import Modal from '../components/Modal';
 import { Plus, Edit, Trash2, Search, User } from 'lucide-react';
 
@@ -39,7 +39,7 @@ const Patients = () => {
 
   const loadPatients = async () => {
     try {
-      const patientsData = await patientService.getPatients();
+      const patientsData = await pacientesService.getPacientes();
       setPatients(patientsData);
       setFilteredPatients(patientsData);
     } catch (error) {
@@ -53,10 +53,19 @@ const Patients = () => {
     e.preventDefault();
     
     try {
+      // Mapeia os campos do frontend para os do backend
+      const pacientePayload = {
+        nome: formData.name,
+        email: formData.email,
+        telefone: formData.phone,
+        endereco: formData.address,
+        data_nascimento: formData.birthDate,
+        observacoes: formData.notes
+      };
       if (editingPatient) {
-        await patientService.updatePatient(editingPatient.id, formData);
+        await pacientesService.updatePaciente(editingPatient.id, pacientePayload);
       } else {
-        await patientService.createPatient(formData);
+        await pacientesService.createPaciente(pacientePayload);
       }
 
       setIsModalOpen(false);
@@ -78,12 +87,12 @@ const Patients = () => {
   const handleEdit = (patient) => {
     setEditingPatient(patient);
     setFormData({
-      name: patient.name || '',
+      name: patient.nome || '',
       email: patient.email || '',
-      phone: patient.phone || '',
-      address: patient.address || '',
-      birthDate: patient.birthDate || '',
-      notes: patient.notes || ''
+      phone: patient.telefone || '',
+      address: patient.endereco || '',
+      birthDate: patient.data_nascimento ? patient.data_nascimento.split('T')[0] : '',
+      notes: patient.observacoes || ''
     });
     setIsModalOpen(true);
   };
@@ -91,7 +100,7 @@ const Patients = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir este paciente?')) {
       try {
-        await patientService.deletePatient(id);
+        await pacientesService.deletePaciente(id);
         loadPatients();
       } catch (error) {
         console.error('Error deleting patient:', error);
