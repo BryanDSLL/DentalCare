@@ -9,7 +9,7 @@ const Dashboard = () => {
     upcoming: 0,
     total: 0
   });
-  const [loading, setLoading] = useState(false); // Não inicia mais como true
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -18,17 +18,23 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const today = new Date();
-      const appointments = await consultasService.getAppointments(today);
-      setTodaysAppointments(appointments);
-      
-      // Calculate stats
-      const allAppointments = await consultasService.getAppointments();
-      const upcoming = allAppointments.filter(apt => 
-        apt.date.toDate ? apt.date.toDate() > today : new Date(apt.date) > today
-      ).length;
-      
+      today.setHours(0,0,0,0);
+      const allAppointments = await consultasService.getAgendamentos();
+      // Consultas de hoje
+      const todays = allAppointments.filter(apt => {
+        const aptDate = new Date(apt.data);
+        return aptDate.getFullYear() === today.getFullYear() &&
+          aptDate.getMonth() === today.getMonth() &&
+          aptDate.getDate() === today.getDate();
+      });
+      setTodaysAppointments(todays);
+      // Próximas consultas (após hoje)
+      const upcoming = allAppointments.filter(apt => {
+        const aptDate = new Date(apt.data);
+        return aptDate > today;
+      }).length;
       setStats({
-        today: appointments.length,
+        today: todays.length,
         upcoming,
         total: allAppointments.length
       });
@@ -39,13 +45,9 @@ const Dashboard = () => {
     }
   };
 
-
-  const formatTime = (date) => {
-    const dateObj = date.toDate ? date.toDate() : new Date(date);
-    return dateObj.toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  const formatTime = (data) => {
+    const dateObj = new Date(data);
+    return dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
   if (loading) {
@@ -139,21 +141,22 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-white">
-                      {appointment.patientName}
+                      {/* Exibe nome do paciente se disponível */}
+                      {appointment.patientName || appointment.nome_paciente || 'Paciente'}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatTime(appointment.date)}
+                      {formatTime(appointment.data)}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {appointment.type}
+                    {appointment.tipo}
                   </p>
-                  {appointment.phone && (
+                  {appointment.telefone && (
                     <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                       <Phone className="h-4 w-4 mr-1" />
-                      {appointment.phone}
+                      {appointment.telefone}
                     </div>
                   )}
                 </div>

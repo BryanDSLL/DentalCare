@@ -4,14 +4,6 @@ import PropTypes from 'prop-types';
 const AuthContext = createContext();
 const API_URL = 'http://172.16.31.176:3001/api';
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -85,4 +77,9 @@ export const AuthProvider = ({ children }) => {
 
 AuthProvider.propTypes = {
   children: PropTypes.node.isRequired,
+};
+
+// Custom hook para usar o AuthContext
+export const useAuth = () => {
+  return useContext(AuthContext);
 };

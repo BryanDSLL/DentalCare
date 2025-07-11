@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { consultasService } from '../services/consultasService';
 import { pacientesService } from '../services/pacientesService';
 import Modal from '../components/Modal';
-import { Calendar, Clock, Plus, Edit, Trash2 } from 'lucide-react';
+import { Clock, Plus, Edit, Trash2 } from 'lucide-react';
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [pendingDate, setPendingDate] = useState(selectedDate);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
-  const [loading, setLoading] = useState(false); // Não inicia mais como true
+  const [loading, setLoading] = useState(false); 
   const [formData, setFormData] = useState({
     patientId: '',
     patientName: '',
@@ -21,28 +22,13 @@ const Appointments = () => {
     phone: ''
   });
 
-  useEffect(() => {
-    const loadAppointmentsAsync = async () => {
-      try {
-        const date = new Date(selectedDate);
-        const appointmentsData = await consultasService.getAppointments(date);
-        setAppointments(appointmentsData);
-      } catch (error) {
-        console.error('Error loading appointments:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAppointmentsAsync();
-    loadPatients();
-  }, [selectedDate]);
-
-  const loadAppointments = async () => {
+  const loadAppointmentsAsync = async () => {
+    setLoading(true);
     try {
-      const date = new Date(selectedDate);
-      const appointmentsData = await consultasService.getAppointments(date);
+      // Busca todos agendamentos do backend
+      const appointmentsData = await consultasService.getAgendamentos();
       setAppointments(appointmentsData);
+      console.log('Agendamentos recebidos:', appointmentsData);
     } catch (error) {
       console.error('Error loading appointments:', error);
     } finally {
@@ -50,9 +36,14 @@ const Appointments = () => {
     }
   };
 
+  useEffect(() => {
+    loadAppointmentsAsync();
+    loadPatients();
+  }, [selectedDate]);
+
   const loadPatients = async () => {
     try {
-      const patientsData = await pacientesService.getPatients();
+      const patientsData = await pacientesService.getPacientes();
       setPatients(patientsData);
     } catch (error) {
       console.error('Error loading patients:', error);
@@ -61,19 +52,18 @@ const Appointments = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
       const appointmentData = {
-        ...formData,
-        date: new Date(`${formData.date}T${formData.time}:00`),
+        idpaciente: formData.patientId,
+        data: `${formData.date}T${formData.time}:00`,
+        tipo: formData.type,
+        notas: formData.notes
       };
-
       if (editingAppointment) {
-        await consultasService.updateAppointment(editingAppointment.id, appointmentData);
+        await consultasService.updateAgendamento(editingAppointment.id, appointmentData);
       } else {
-        await consultasService.createAppointment(appointmentData);
+        await consultasService.createAgendamento(appointmentData);
       }
-
       setIsModalOpen(false);
       setEditingAppointment(null);
       setFormData({
@@ -85,7 +75,8 @@ const Appointments = () => {
         notes: '',
         phone: ''
       });
-      loadAppointments();
+      // Atualiza agendamentos para a data selecionada
+      await loadAppointmentsAsync();
     } catch (error) {
       console.error('Error saving appointment:', error);
     }
@@ -93,15 +84,23 @@ const Appointments = () => {
 
   const handleEdit = (appointment) => {
     setEditingAppointment(appointment);
-    const appointmentDate = appointment.date.toDate ? appointment.date.toDate() : new Date(appointment.date);
+    // Ajusta para backend: data é string ou Date
+    let appointmentDate;
+    if (appointment.data instanceof Date) {
+      appointmentDate = appointment.data;
+    } else if (typeof appointment.data === 'string') {
+      appointmentDate = new Date(appointment.data);
+    } else {
+      appointmentDate = new Date(); // fallback
+    }
     setFormData({
-      patientId: appointment.patientId || '',
-      patientName: appointment.patientName || '',
+      patientId: appointment.idpaciente || '',
+      patientName: '', // será preenchido pelo select
       date: appointmentDate.toISOString().split('T')[0],
       time: appointmentDate.toTimeString().slice(0, 5),
-      type: appointment.type || '',
-      notes: appointment.notes || '',
-      phone: appointment.phone || ''
+      type: appointment.tipo || '',
+      notes: appointment.notas || '',
+      phone: ''
     });
     setIsModalOpen(true);
   };
@@ -109,8 +108,8 @@ const Appointments = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja cancelar esta consulta?')) {
       try {
-        await consultasService.deleteAppointment(id);
-        loadAppointments();
+        await consultasService.deleteAgendamento(id);
+        await loadAppointmentsAsync();
       } catch (error) {
         console.error('Error deleting appointment:', error);
       }
@@ -123,18 +122,64 @@ const Appointments = () => {
     setFormData({
       ...formData,
       patientId,
-      patientName: patient ? patient.name : '',
-      phone: patient ? patient.phone : ''
+      patientName: patient ? patient.nome : '',
+      phone: patient ? patient.telefone : ''
     });
   };
 
   const formatDateTime = (date) => {
-    const dateObj = date.toDate ? date.toDate() : new Date(date);
+    let dateObj;
+    if (typeof date === 'string') {
+      dateObj = parseDateLocal(date);
+    } else if (date instanceof Date) {
+      dateObj = date;
+    } else {
+      dateObj = new Date(date);
+    }
     return {
       date: dateObj.toLocaleDateString('pt-BR'),
       time: dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     };
   };
+
+  function parseDateLocal(dateString) {
+    if (/Z$/i.test(dateString)) {
+      const d = new Date(dateString);
+      d.setHours(d.getHours() - 3);
+      return d;
+    }
+    const clean = dateString.replace(/Z|\+\d{2}:?\d{2}$/i, '');
+    const [datePart, timePart] = clean.replace('T', ' ').split(' ');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour = 0, min = 0, sec = 0] = (timePart || '').split(':').map(Number);
+    return new Date(year, month - 1, day, hour, min, sec);
+  }
+
+  const filteredAppointments = appointments.filter(appointment => {
+    if (!appointment.data) return false;
+    let localDate;
+    if (typeof appointment.data === 'string') {
+      localDate = parseDateLocal(appointment.data);
+      if (isNaN(localDate.getTime())) return false;
+    } else {
+      localDate = new Date(appointment.data);
+      if (isNaN(localDate.getTime())) return false;
+    }
+    const [selYear, selMonth, selDay] = selectedDate.split('-').map(Number);
+    const match = (
+      localDate.getFullYear() === selYear &&
+      localDate.getMonth() + 1 === selMonth &&
+      localDate.getDate() === selDay
+    );
+    if (match) {
+      console.log('Match:', {
+        data: appointment.data,
+        localDate: localDate.toISOString(),
+        selectedDate
+      });
+    }
+    return match;
+  });
 
   if (loading) {
     return (
@@ -160,30 +205,40 @@ const Appointments = () => {
       {/* Date Filter */}
       <div className="card">
         <div className="flex items-center space-x-4">
-          <Calendar className="h-5 w-5 text-gray-400 dark:text-white min-w-[20px] min-h-[20px]" />
           <input
             type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="input max-w-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors [&::-webkit-calendar-picker-indicator]:invert-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+            value={pendingDate}
+            onChange={(e) => setPendingDate(e.target.value)}
+            className="input w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors [&::-webkit-calendar-picker-indicator]:invert-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
           />
+          <button
+            type="button"
+            className="btn btn-primary px-4 py-2 text-sm ml-2"
+            onClick={() => {
+              // Garante formato yyyy-MM-dd
+              const normalized = new Date(pendingDate).toISOString().split('T')[0];
+              setSelectedDate(normalized);
+            }}
+          >
+            OK
+          </button>
         </div>
       </div>
 
       {/* Appointments List */}
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Consultas - {new Date(selectedDate).toLocaleDateString('pt-BR')}
+          Consultas - {selectedDate.split('-').reverse().join('/')}
         </h2>
-        
-        {appointments.length === 0 ? (
+        {filteredAppointments.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">
             Nenhuma consulta agendada para esta data
           </p>
         ) : (
           <div className="space-y-4">
-            {appointments.map((appointment) => {
-              const { time } = formatDateTime(appointment.date);
+            {filteredAppointments.map((appointment) => {
+              const { time } = formatDateTime(appointment.data);
+              const patient = patients.find(p => p.id === appointment.idpaciente);
               return (
                 <div
                   key={appointment.id}
@@ -191,18 +246,18 @@ const Appointments = () => {
                 >
                   <div className="flex items-center space-x-4">
                     <div className="bg-primary-100 dark:bg-primary-900 p-2 rounded-lg">
-                      <Clock className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                      <Clock size={20} className="text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900 dark:text-white">
-                        {appointment.patientName}
+                        {patient ? patient.nome : 'Paciente'}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {time} - {appointment.type}
+                        {time} - {appointment.tipo}
                       </p>
-                      {appointment.notes && (
+                      {appointment.notas && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {appointment.notes}
+                          {appointment.notas}
                         </p>
                       )}
                     </div>
@@ -212,13 +267,13 @@ const Appointments = () => {
                       onClick={() => handleEdit(appointment)}
                       className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                     >
-                      <Edit size={16} />
+                      <Edit size={20} />
                     </button>
                     <button
                       onClick={() => handleDelete(appointment.id)}
                       className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={20} />
                     </button>
                   </div>
                 </div>
@@ -260,7 +315,7 @@ const Appointments = () => {
               <option value="">Selecione um paciente</option>
               {patients.map((patient) => (
                 <option key={patient.id} value={patient.id}>
-                  {patient.name}
+                  {patient.nome}
                 </option>
               ))}
             </select>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { Moon, Sun, Settings as SettingsIcon } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
+import { configuracoesService } from '../services/configuracoesService';
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
@@ -14,11 +15,56 @@ const Settings = () => {
       end: '18:00'
     }
   });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    async function fetchConfig() {
+      setLoading(true);
+      try {
+        const config = await configuracoesService.getConfiguracoes();
+        setClinicData({
+          name: config.nome || 'Clínica Odontológica',
+          address: config.endereco || '',
+          phone: config.telefone || '',
+          email: config.email || '',
+          workingHours: {
+            start: config.horario_inicio || '08:00',
+            end: config.horario_fim || '18:00'
+          }
+        });
+      } catch {
+        setError('Erro ao carregar configurações');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchConfig();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Save clinic data (would normally save to database)
-    console.log('Clinic data saved:', clinicData);
+    setLoading(true);
+    setError('');
+    setSuccess(false);
+    try {
+      const response = await configuracoesService.saveConfiguracoes({
+        nome: clinicData.name,
+        endereco: clinicData.address,
+        telefone: clinicData.phone,
+        email: clinicData.email,
+        horario_inicio: clinicData.workingHours.start,
+        horario_fim: clinicData.workingHours.end
+      });
+      console.log('Configuração salva:', response); // <-- log detalhado
+      setSuccess(true);
+    } catch (err) {
+      setError('Erro ao salvar configurações: ' + (err?.message || ''));
+      console.error('Erro ao salvar configurações:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -157,10 +203,17 @@ const Settings = () => {
             <button
               type="submit"
               className="btn btn-primary px-6 py-2 text-sm"
+              disabled={loading}
             >
-              Salvar Configurações
+              {loading ? 'Salvando...' : 'Salvar Configurações'}
             </button>
           </div>
+          {success && (
+            <div className="text-green-600 text-sm mt-2">Configurações salvas com sucesso!</div>
+          )}
+          {error && (
+            <div className="text-red-600 text-sm mt-2">{error}</div>
+          )}
         </form>
       </div>
 
