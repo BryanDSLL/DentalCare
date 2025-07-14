@@ -16,3 +16,8 @@ export const pool = new Pool({
   connectionString,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
+
+// Testa conexão ao banco na inicialização
+pool.query('SELECT 1')
+  .then(() => console.log('Conexão com PostgreSQL estabelecida com sucesso!'))
+  .catch((err) => console.error('Erro ao conectar ao PostgreSQL:', err));
