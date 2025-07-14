@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { consultasService } from '../services/consultasService';
+import { servicoConsultas } from '../services/consultasService.js';
 import { Calendar, Clock, User, Phone } from 'lucide-react';
 
 const Dashboard = () => {
@@ -19,7 +19,7 @@ const Dashboard = () => {
     try {
       const today = new Date();
       today.setHours(0,0,0,0);
-      const allAppointments = await consultasService.getAgendamentos();
+      const allAppointments = await servicoConsultas.getAgendamentos();
       // Consultas de hoje
       const todays = allAppointments.filter(apt => {
         const aptDate = new Date(apt.data);

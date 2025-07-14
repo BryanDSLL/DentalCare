@@ -1,119 +1,109 @@
 import { useState, useEffect } from 'react';
-import { pacientesService } from '../services/pacientesService';
+import { servicoPacientes } from '../services/pacientesService.js';
 import Modal from '../components/Modal';
 import { Plus, Edit, Trash2, Search, User } from 'lucide-react';
 
-const Patients = () => {
-  const [patients, setPatients] = useState([]);
-  const [filteredPatients, setFilteredPatients] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState(null);
-  const [loading, setLoading] = useState(false); // Não inicia mais como true
-  const [formData, setFormData] = useState({
-    name: '',
+const Pacientes = () => {
+  const [pacientes, setPacientes] = useState([]);
+  const [pacientesFiltrados, setPacientesFiltrados] = useState([]);
+  const [termoBusca, setTermoBusca] = useState('');
+  const [modalAberto, setModalAberto] = useState(false);
+  const [pacienteEditando, setPacienteEditando] = useState(null);
+  const [carregando, setCarregando] = useState(false);
+  const [dadosFormulario, setDadosFormulario] = useState({
+    nome: '',
     email: '',
-    phone: '',
-    address: '',
-    birthDate: '',
-    notes: ''
+    telefone: '',
+    endereco: '',
+    data_nascimento: '',
+    observacoes: ''
   });
 
   useEffect(() => {
-    loadPatients();
+    carregarPacientes();
   }, []);
 
   useEffect(() => {
-    if (searchTerm) {
-      setFilteredPatients(
-        patients.filter(patient =>
-          patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patient.phone.includes(searchTerm)
+    if (termoBusca) {
+      setPacientesFiltrados(
+        pacientes.filter(paciente =>
+          (paciente.nome || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+          (paciente.email || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+          (paciente.telefone || '').includes(termoBusca)
         )
       );
     } else {
-      setFilteredPatients(patients);
+      setPacientesFiltrados(pacientes);
     }
-  }, [searchTerm, patients]);
+  }, [termoBusca, pacientes]);
 
-  const loadPatients = async () => {
+  const carregarPacientes = async () => {
     try {
-      const patientsData = await pacientesService.getPacientes();
-      setPatients(patientsData);
-      setFilteredPatients(patientsData);
-    } catch (error) {
-      console.error('Error loading patients:', error);
+      const dados = await servicoPacientes.buscarPacientes();
+      setPacientes(dados);
+      setPacientesFiltrados(dados);
+    } catch (erro) {
+      console.error('Erro ao carregar pacientes:', erro);
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
   };
 
-  const handleSubmit = async (e) => {
+  const aoSubmeter = async (e) => {
     e.preventDefault();
-    
     try {
-      // Mapeia os campos do frontend para os do backend
-      const pacientePayload = {
-        nome: formData.name,
-        email: formData.email,
-        telefone: formData.phone,
-        endereco: formData.address,
-        data_nascimento: formData.birthDate,
-        observacoes: formData.notes
-      };
-      if (editingPatient) {
-        await pacientesService.updatePaciente(editingPatient.id, pacientePayload);
+      const pacientePayload = { ...dadosFormulario };
+      if (pacienteEditando) {
+        await servicoPacientes.atualizarPaciente(pacienteEditando.id, pacientePayload);
       } else {
-        await pacientesService.createPaciente(pacientePayload);
+        await servicoPacientes.criarPaciente(pacientePayload);
       }
-
-      setIsModalOpen(false);
-      setEditingPatient(null);
-      setFormData({
-        name: '',
+      setModalAberto(false);
+      setPacienteEditando(null);
+      setDadosFormulario({
+        nome: '',
         email: '',
-        phone: '',
-        address: '',
-        birthDate: '',
-        notes: ''
+        telefone: '',
+        endereco: '',
+        data_nascimento: '',
+        observacoes: ''
       });
-      loadPatients();
-    } catch (error) {
-      console.error('Error saving patient:', error);
+      carregarPacientes();
+    } catch (erro) {
+      console.error('Erro ao salvar paciente:', erro);
     }
   };
 
-  const handleEdit = (patient) => {
-    setEditingPatient(patient);
-    setFormData({
-      name: patient.nome || '',
-      email: patient.email || '',
-      phone: patient.telefone || '',
-      address: patient.endereco || '',
-      birthDate: patient.data_nascimento ? patient.data_nascimento.split('T')[0] : '',
-      notes: patient.observacoes || ''
+  const aoEditar = (paciente) => {
+    setPacienteEditando(paciente);
+    setDadosFormulario({
+      nome: paciente.nome || '',
+      email: paciente.email || '',
+      telefone: paciente.telefone || '',
+      endereco: paciente.endereco || '',
+      data_nascimento: paciente.data_nascimento ? paciente.data_nascimento.split('T')[0] : '',
+      observacoes: paciente.observacoes || ''
     });
-    setIsModalOpen(true);
+    setModalAberto(true);
   };
 
-  const handleDelete = async (id) => {
+  const aoExcluir = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir este paciente?')) {
       try {
-        await pacientesService.deletePaciente(id);
-        loadPatients();
-      } catch (error) {
-        console.error('Error deleting patient:', error);
+        await servicoPacientes.excluirPaciente(id);
+        carregarPacientes();
+      } catch (erro) {
+        console.error('Erro ao excluir paciente:', erro);
       }
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const formatarData = (dataString) => {
+    if (!dataString) return '';
+    return new Date(dataString).toLocaleDateString('pt-BR');
   };
 
-  if (loading) {
+  if (carregando) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-gray-500 dark:text-gray-400">Carregando...</div>
@@ -126,7 +116,7 @@ const Patients = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pacientes</h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => setModalAberto(true)}
           className="btn btn-primary px-4 py-2 text-sm font-medium"
         >
           <Plus size={20} className="mr-2" />
@@ -134,35 +124,34 @@ const Patients = () => {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Busca */}
       <div className="card">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
             placeholder="Buscar pacientes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={termoBusca}
+            onChange={(e) => setTermoBusca(e.target.value)}
             className="input pl-10"
           />
         </div>
       </div>
 
-      {/* Patients List */}
+      {/* Lista de Pacientes */}
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Lista de Pacientes ({filteredPatients.length})
+          Lista de Pacientes ({pacientesFiltrados.length})
         </h2>
-        
-        {filteredPatients.length === 0 ? (
+        {pacientesFiltrados.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-            {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
+            {termoBusca ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
           </p>
         ) : (
           <div className="space-y-4">
-            {filteredPatients.map((patient) => (
+            {pacientesFiltrados.map((paciente) => (
               <div
-                key={patient.id}
+                key={paciente.id}
                 className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
               >
                 <div className="flex items-center space-x-4">
@@ -171,27 +160,27 @@ const Patients = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-white">
-                      {patient.name}
+                      {paciente.nome}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {patient.email} • {patient.phone}
+                      {paciente.email} • {paciente.telefone}
                     </p>
-                    {patient.birthDate && (
+                    {paciente.data_nascimento && (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Nascimento: {formatDate(patient.birthDate)}
+                        Nascimento: {formatarData(paciente.data_nascimento)}
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => handleEdit(patient)}
+                    onClick={() => aoEditar(paciente)}
                     className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                   >
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(patient.id)}
+                    onClick={() => aoExcluir(paciente.id)}
                     className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                   >
                     <Trash2 size={16} />
@@ -205,30 +194,30 @@ const Patients = () => {
 
       {/* Modal */}
       <Modal
-        isOpen={isModalOpen}
+        isOpen={modalAberto}
         onClose={() => {
-          setIsModalOpen(false);
-          setEditingPatient(null);
-          setFormData({
-            name: '',
+          setModalAberto(false);
+          setPacienteEditando(null);
+          setDadosFormulario({
+            nome: '',
             email: '',
-            phone: '',
-            address: '',
-            birthDate: '',
-            notes: ''
+            telefone: '',
+            endereco: '',
+            data_nascimento: '',
+            observacoes: ''
           });
         }}
-        title={editingPatient ? 'Editar Paciente' : 'Novo Paciente'}
+        title={pacienteEditando ? 'Editar Paciente' : 'Novo Paciente'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={aoSubmeter} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nome Completo
             </label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={dadosFormulario.nome}
+              onChange={(e) => setDadosFormulario({ ...dadosFormulario, nome: e.target.value })}
               className="input"
               required
             />
@@ -241,8 +230,8 @@ const Patients = () => {
               </label>
               <input
                 type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={dadosFormulario.email}
+                onChange={(e) => setDadosFormulario({ ...dadosFormulario, email: e.target.value })}
                 className="input"
                 required
               />
@@ -253,8 +242,8 @@ const Patients = () => {
               </label>
               <input
                 type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                value={dadosFormulario.telefone}
+                onChange={(e) => setDadosFormulario({ ...dadosFormulario, telefone: e.target.value })}
                 className="input"
                 required
               />
@@ -267,8 +256,8 @@ const Patients = () => {
             </label>
             <input
               type="text"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              value={dadosFormulario.endereco}
+              onChange={(e) => setDadosFormulario({ ...dadosFormulario, endereco: e.target.value })}
               className="input"
             />
           </div>
@@ -279,8 +268,8 @@ const Patients = () => {
             </label>
             <input
               type="date"
-              value={formData.birthDate}
-              onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+              value={dadosFormulario.data_nascimento}
+              onChange={(e) => setDadosFormulario({ ...dadosFormulario, data_nascimento: e.target.value })}
               className="input"
             />
           </div>
@@ -290,8 +279,8 @@ const Patients = () => {
               Observações
             </label>
             <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              value={dadosFormulario.observacoes}
+              onChange={(e) => setDadosFormulario({ ...dadosFormulario, observacoes: e.target.value })}
               className="input"
               rows="3"
               placeholder="Observações sobre o paciente..."
@@ -302,8 +291,8 @@ const Patients = () => {
             <button
               type="button"
               onClick={() => {
-                setIsModalOpen(false);
-                setEditingPatient(null);
+                setModalAberto(false);
+                setPacienteEditando(null);
               }}
               className="btn btn-secondary px-4 py-2 text-sm"
             >
@@ -313,7 +302,7 @@ const Patients = () => {
               type="submit"
               className="btn btn-primary px-4 py-2 text-sm"
             >
-              {editingPatient ? 'Salvar' : 'Cadastrar'}
+              {pacienteEditando ? 'Salvar' : 'Cadastrar'}
             </button>
           </div>
         </form>
@@ -322,4 +311,4 @@ const Patients = () => {
   );
 };
 
-export default Patients;
+export default Pacientes;

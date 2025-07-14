@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAutenticacao } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 
-const Register = () => {
+const Registro = () => {
   const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const { signup } = useAutenticacao();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -25,7 +25,7 @@ const Register = () => {
     try {
       await signup(formData.email, formData.password);
       navigate('/');
-    } catch (error) {
+    } catch {
       setError('Falha ao criar conta. Tente novamente.');
     } finally {
       setLoading(false);
@@ -125,4 +125,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Registro;

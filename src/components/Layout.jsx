@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAutenticacao } from '../contexts/AuthContext';
+import { useTema } from '../contexts/ThemeContext';
 import {
   Home,
   Calendar,
@@ -16,8 +16,8 @@ import {
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { logout } = useAutenticacao();
+  const { theme, toggleTheme } = useTema();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,9 +33,9 @@ const Layout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Agendamentos', href: '/appointments', icon: Calendar },
-    { name: 'Pacientes', href: '/patients', icon: Users },
-    { name: 'Configurações', href: '/settings', icon: Settings },
+    { name: 'Agendamentos', href: '/agendamentos', icon: Calendar },
+    { name: 'Pacientes', href: '/pacientes', icon: Users },
+    { name: 'Configurações', href: '/configuracoes', icon: Settings },
   ];
 
   const isActive = (path) => location.pathname === path;

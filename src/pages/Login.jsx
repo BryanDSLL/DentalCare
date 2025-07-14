@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAutenticacao } from '../contexts/AuthContext';
 import { Activity, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
@@ -9,7 +9,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login } = useAutenticacao();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {

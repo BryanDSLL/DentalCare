@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTema } from '../contexts/ThemeContext';
 import { Moon, Sun } from 'lucide-react';
-import { configuracoesService } from '../services/configuracoesService';
+import { servicoConfiguracoes } from '../services/configuracoesService.js';
 
-const Settings = () => {
-  const { theme, toggleTheme } = useTheme();
+const Configuracoes = () => {
+  const { theme, toggleTheme } = useTema();
   const [clinicData, setClinicData] = useState({
     name: 'Clínica Odontológica',
     address: '',
@@ -23,7 +23,7 @@ const Settings = () => {
     async function fetchConfig() {
       setLoading(true);
       try {
-        const config = await configuracoesService.getConfiguracoes();
+        const config = await servicoConfiguracoes.getConfiguracoes();
         setClinicData({
           name: config.nome || 'Clínica Odontológica',
           address: config.endereco || '',
@@ -49,7 +49,7 @@ const Settings = () => {
     setError('');
     setSuccess(false);
     try {
-      const response = await configuracoesService.saveConfiguracoes({
+      const response = await servicoConfiguracoes.saveConfiguracoes({
         nome: clinicData.name,
         endereco: clinicData.address,
         telefone: clinicData.phone,
@@ -245,4 +245,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Configuracoes;

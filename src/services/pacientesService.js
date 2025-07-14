@@ -1,7 +1,7 @@
 const API_URL = 'http://172.16.31.176:3001/api';
 
-export const pacientesService = {
-  async getPacientes() {
+export const servicoPacientes = {
+  async buscarPacientes() {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/pacientes`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -9,7 +9,7 @@ export const pacientesService = {
     return response.json();
   },
 
-  async getPacienteById(id) {
+  async buscarPacientePorId(id) {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/pacientes/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -20,7 +20,7 @@ export const pacientesService = {
     return response.json();
   },
 
-  async createPaciente(paciente) {
+  async criarPaciente(paciente) {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/pacientes`, {
       method: 'POST',
@@ -36,7 +36,7 @@ export const pacientesService = {
     return response.json();
   },
 
-  async updatePaciente(id, paciente) {
+  async atualizarPaciente(id, paciente) {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/pacientes/${id}`, {
       method: 'PUT',
@@ -52,7 +52,7 @@ export const pacientesService = {
     return response.json();
   },
 
-  async deletePaciente(id) {
+  async excluirPaciente(id) {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/pacientes/${id}`, {
       method: 'DELETE',

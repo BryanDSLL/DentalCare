@@ -1,19 +1,19 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ProvedorAutenticacao } from './contexts/AuthContext';
+import { ProvedorTema } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Appointments from './pages/Appointments';
-import Patients from './pages/Patients';
-import Settings from './pages/Settings';
+import Pacientes from './pages/Pacientes.jsx';
+import Agendamentos from './pages/Agendamentos.jsx';
+import Configuracoes from './pages/Configuracoes.jsx';
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
+    <ProvedorTema>
+      <ProvedorAutenticacao>
         <Router basename="/DentalCare">
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -24,14 +24,14 @@ function App() {
               </ProtectedRoute>
             }>
               <Route index element={<Dashboard />} />
-              <Route path="appointments" element={<Appointments />} />
-              <Route path="patients" element={<Patients />} />
-              <Route path="settings" element={<Settings />} />
+              <Route path="agendamentos" element={<Agendamentos />} />
+              <Route path="pacientes" element={<Pacientes />} />
+              <Route path="configuracoes" element={<Configuracoes />} />
             </Route>
           </Routes>
         </Router>
-      </AuthProvider>
-    </ThemeProvider>
+      </ProvedorAutenticacao>
+    </ProvedorTema>
   );
 }
 

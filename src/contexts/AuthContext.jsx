@@ -1,10 +1,10 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import PropTypes from 'prop-types';
 
-const AuthContext = createContext();
+const ContextoAutenticacao = createContext();
 const API_URL = 'http://172.16.31.176:3001/api';
 
-export const AuthProvider = ({ children }) => {
+export const ProvedorAutenticacao = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,17 +69,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <ContextoAutenticacao.Provider value={value}>
       {!loading && children}
-    </AuthContext.Provider>
+    </ContextoAutenticacao.Provider>
   );
 };
 
-AuthProvider.propTypes = {
+ProvedorAutenticacao.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-// Custom hook para usar o AuthContext
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export function useAutenticacao() {
+  return useContext(ContextoAutenticacao);
+}
+

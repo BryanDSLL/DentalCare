@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { consultasService } from '../services/consultasService';
-import { pacientesService } from '../services/pacientesService';
+import { servicoConsultas } from '../services/consultasService.js';
+import { servicoPacientes } from '../services/pacientesService.js';
 import Modal from '../components/Modal';
 import { Clock, Plus, Edit, Trash2 } from 'lucide-react';
 
-const Appointments = () => {
+const Agendamentos = () => {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -21,12 +21,13 @@ const Appointments = () => {
     notes: '',
     phone: ''
   });
+  const [formErrors, setFormErrors] = useState({});
 
   const loadAppointmentsAsync = async () => {
     setLoading(true);
     try {
       // Busca todos agendamentos do backend
-      const appointmentsData = await consultasService.getAgendamentos();
+      const appointmentsData = await servicoConsultas.getAgendamentos();
       setAppointments(appointmentsData);
       console.log('Agendamentos recebidos:', appointmentsData);
     } catch (error) {
@@ -43,26 +44,45 @@ const Appointments = () => {
 
   const loadPatients = async () => {
     try {
-      const patientsData = await pacientesService.getPacientes();
+      const patientsData = await servicoPacientes.buscarPacientes();
       setPatients(patientsData);
     } catch (error) {
       console.error('Error loading patients:', error);
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+    // Data obrigatória
+    if (!formData.date) {
+      errors.date = 'A data é obrigatória';
+    }
+    // Telefone obrigatório e formato simples (mínimo 10 dígitos)
+    const phone = formData.phone || '';
+    if (!phone.trim()) {
+      errors.phone = 'O telefone é obrigatório';
+    } else if (!/^\d{10,11}$/.test(phone.replace(/\D/g, ''))) {
+      errors.phone = 'Telefone inválido (use DDD + número, só dígitos)';
+    }
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateForm();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     try {
       const appointmentData = {
         idpaciente: formData.patientId,
         data: `${formData.date}T${formData.time}:00`,
         tipo: formData.type,
-        notas: formData.notes
+        notas: formData.notes || '' // Permite salvar sem observação
       };
       if (editingAppointment) {
-        await consultasService.updateAgendamento(editingAppointment.id, appointmentData);
+        await servicoConsultas.updateAgendamento(editingAppointment.id, appointmentData);
       } else {
-        await consultasService.createAgendamento(appointmentData);
+        await servicoConsultas.createAgendamento(appointmentData);
       }
       setIsModalOpen(false);
       setEditingAppointment(null);
@@ -75,6 +95,7 @@ const Appointments = () => {
         notes: '',
         phone: ''
       });
+      setFormErrors({});
       // Atualiza agendamentos para a data selecionada
       await loadAppointmentsAsync();
     } catch (error) {
@@ -108,7 +129,7 @@ const Appointments = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja cancelar esta consulta?')) {
       try {
-        await consultasService.deleteAgendamento(id);
+        await servicoConsultas.deleteAgendamento(id);
         await loadAppointmentsAsync();
       } catch (error) {
         console.error('Error deleting appointment:', error);
@@ -180,6 +201,15 @@ const Appointments = () => {
     }
     return match;
   });
+
+  // Função para formatar telefone (visual)
+  function formatPhone(value) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`;
+  }
 
   if (loading) {
     return (
@@ -333,6 +363,9 @@ const Appointments = () => {
                 className="input"
                 required
               />
+              {formErrors.date && (
+                <div className="text-red-600 text-xs mt-1">{formErrors.date}</div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -370,6 +403,28 @@ const Appointments = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Telefone
+            </label>
+            <input
+              type="tel"
+              value={formatPhone(formData.phone)}
+              onChange={e => {
+                // Só permite dígitos, mantém no state sem máscara
+                setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') });
+              }}
+              className="input"
+              required
+              maxLength={15}
+              placeholder="(99) 99999-9999"
+              inputMode="tel"
+            />
+            {formErrors.phone && (
+              <div className="text-red-600 text-xs mt-1">{formErrors.phone}</div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Observações
             </label>
             <textarea
@@ -377,7 +432,7 @@ const Appointments = () => {
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               className="input"
               rows="3"
-              placeholder="Observações sobre a consulta..."
+              placeholder="Observações sobre a consulta... (opcional)"
             />
           </div>
 
@@ -405,4 +460,4 @@ const Appointments = () => {
   );
 };
 
-export default Appointments;
+export default Agendamentos;

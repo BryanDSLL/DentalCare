@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const ModalDialogo = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
@@ -24,4 +25,11 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-export default Modal;
+ModalDialogo.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string,
+  children: PropTypes.node
+};
+
+export default ModalDialogo;

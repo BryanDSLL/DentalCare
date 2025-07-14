@@ -1,15 +1,15 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAutenticacao } from '../contexts/AuthContext';
 import PropTypes from 'prop-types';
 
-const ProtectedRoute = ({ children }) => {
-  const { currentUser } = useAuth();
+const RotaProtegida = ({ children }) => {
+  const { currentUser } = useAutenticacao();
   const isUniversalAdmin = localStorage.getItem('admin-universal') === 'true';
   return currentUser || isUniversalAdmin ? children : <Navigate to="/login" />;
 };
 
-ProtectedRoute.propTypes = {
+RotaProtegida.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export default ProtectedRoute;
+export default RotaProtegida;

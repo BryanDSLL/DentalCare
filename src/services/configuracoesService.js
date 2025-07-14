@@ -1,6 +1,6 @@
 const API_URL = 'http://172.16.31.176:3001/api';
 
-export const configuracoesService = {
+export const servicoConfiguracoes = {
   async getConfiguracoes() {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/configuracoes`, {

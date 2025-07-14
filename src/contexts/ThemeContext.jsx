@@ -1,16 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
+import PropTypes from 'prop-types';
 
-const ThemeContext = createContext();
+const ContextoTema = createContext();
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
-
-export const ThemeProvider = ({ children }) => {
+export const ProvedorTema = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme || 'light';
@@ -28,8 +21,20 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ContextoTema.Provider value={{ theme, toggleTheme }}>
       {children}
-    </ThemeContext.Provider>
+    </ContextoTema.Provider>
   );
+};
+
+ProvedorTema.propTypes = {
+  children: PropTypes.node
+};
+
+export const useTema = () => {
+  const contexto = useContext(ContextoTema);
+  if (!contexto) {
+    throw new Error('useTema deve ser usado dentro de um ProvedorTema');
+  }
+  return contexto;
 };
