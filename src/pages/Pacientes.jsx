@@ -103,6 +103,14 @@ const Pacientes = () => {
     return new Date(dataString).toLocaleDateString('pt-BR');
   };
 
+  // Função para formatar telefone (99) 99999-9999
+  function formatarTelefone(valor) {
+    const limpo = valor.replace(/\D/g, '');
+    if (limpo.length <= 2) return limpo;
+    if (limpo.length <= 7) return `(${limpo.slice(0,2)}) ${limpo.slice(2)}`;
+    return `(${limpo.slice(0,2)}) ${limpo.slice(2,7)}-${limpo.slice(7,11)}`;
+  }
+
   if (carregando) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -243,7 +251,7 @@ const Pacientes = () => {
               <input
                 type="tel"
                 value={dadosFormulario.telefone}
-                onChange={(e) => setDadosFormulario({ ...dadosFormulario, telefone: e.target.value })}
+                onChange={(e) => setDadosFormulario({ ...dadosFormulario, telefone: formatarTelefone(e.target.value) })}
                 className="input"
                 required
               />

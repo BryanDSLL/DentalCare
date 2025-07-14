@@ -18,8 +18,7 @@ const Agendamentos = () => {
     date: '',
     time: '',
     type: '',
-    notes: '',
-    phone: ''
+    notes: ''
   });
   const [formErrors, setFormErrors] = useState({});
 
@@ -57,27 +56,17 @@ const Agendamentos = () => {
     if (!formData.date) {
       errors.date = 'A data é obrigatória';
     }
-    // Telefone obrigatório e formato simples (mínimo 10 dígitos)
-    const phone = formData.phone || '';
-    if (!phone.trim()) {
-      errors.phone = 'O telefone é obrigatório';
-    } else if (!/^\d{10,11}$/.test(phone.replace(/\D/g, ''))) {
-      errors.phone = 'Telefone inválido (use DDD + número, só dígitos)';
-    }
     return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errors = validateForm();
-    setFormErrors(errors);
-    if (Object.keys(errors).length > 0) return;
     try {
       const appointmentData = {
         idpaciente: formData.patientId,
         data: `${formData.date}T${formData.time}:00`,
         tipo: formData.type,
-        notas: formData.notes || '' // Permite salvar sem observação
+        notas: formData.notes
       };
       if (editingAppointment) {
         await servicoConsultas.updateAgendamento(editingAppointment.id, appointmentData);
@@ -92,10 +81,8 @@ const Agendamentos = () => {
         date: '',
         time: '',
         type: '',
-        notes: '',
-        phone: ''
+        notes: ''
       });
-      setFormErrors({});
       // Atualiza agendamentos para a data selecionada
       await loadAppointmentsAsync();
     } catch (error) {
@@ -120,8 +107,7 @@ const Agendamentos = () => {
       date: appointmentDate.toISOString().split('T')[0],
       time: appointmentDate.toTimeString().slice(0, 5),
       type: appointment.tipo || '',
-      notes: appointment.notas || '',
-      phone: ''
+      notes: appointment.notas || ''
     });
     setIsModalOpen(true);
   };
@@ -143,8 +129,7 @@ const Agendamentos = () => {
     setFormData({
       ...formData,
       patientId,
-      patientName: patient ? patient.nome : '',
-      phone: patient ? patient.telefone : ''
+      patientName: patient ? patient.nome : ''
     });
   };
 
@@ -201,15 +186,6 @@ const Agendamentos = () => {
     }
     return match;
   });
-
-  // Função para formatar telefone (visual)
-  function formatPhone(value) {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 6) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
-    if (digits.length <= 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
-    return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`;
-  }
 
   if (loading) {
     return (
@@ -325,8 +301,7 @@ const Agendamentos = () => {
             date: '',
             time: '',
             type: '',
-            notes: '',
-            phone: ''
+            notes: ''
           });
         }}
         title={editingAppointment ? 'Editar Consulta' : 'Nova Consulta'}
@@ -399,28 +374,6 @@ const Agendamentos = () => {
               <option value="Canal">Canal</option>
               <option value="Emergência">Emergência</option>
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Telefone
-            </label>
-            <input
-              type="tel"
-              value={formatPhone(formData.phone)}
-              onChange={e => {
-                // Só permite dígitos, mantém no state sem máscara
-                setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') });
-              }}
-              className="input"
-              required
-              maxLength={15}
-              placeholder="(99) 99999-9999"
-              inputMode="tel"
-            />
-            {formErrors.phone && (
-              <div className="text-red-600 text-xs mt-1">{formErrors.phone}</div>
-            )}
           </div>
 
           <div>

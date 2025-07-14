@@ -2,7 +2,7 @@ import { createContext, useState, useEffect, useContext } from 'react';
 import PropTypes from 'prop-types';
 
 const ContextoAutenticacao = createContext();
-const API_URL = 'http://172.16.31.176:3001/api';
+const API_URL = 'http://localhost:3001/api';
 
 export const ProvedorAutenticacao = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
