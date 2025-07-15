@@ -14,7 +14,7 @@ function App() {
   return (
     <ProvedorTema>
       <ProvedorAutenticacao>
-        <Router basename="/DentalCare">
+        <Router basename="/">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
