@@ -16,9 +16,7 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    // Universal admin login (bypass Firebase)
     if (email === 'admin@dentalcare.com' && password === '123456') {
-      // Simula usuário autenticado no contexto
       localStorage.setItem('admin-universal', 'true');
       navigate('/');
       setIsLoading(false);

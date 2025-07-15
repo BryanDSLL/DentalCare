@@ -12,6 +12,12 @@ if (!connectionString) {
   throw new Error('DATABASE_URL não definida. Configure no Railway ou no arquivo .env local.');
 }
 
+console.log('Tentando conectar ao PostgreSQL com as configurações:');
+console.log({
+  connectionString,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
 export const pool = new Pool({
   connectionString,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
