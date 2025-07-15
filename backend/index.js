@@ -10,12 +10,17 @@ app.use(cors());
 app.use(express.json());
 
 
+import dotenv from 'dotenv';
+dotenv.config();
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL não definida. Configure no Railway ou no arquivo .env local.');
+}
+
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'DENTALCARE',
-  password: '#abc123#',
-  port: 5432,
+  connectionString,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 app.get('/api/ping', async (req, res) => {
