@@ -18,6 +18,16 @@ console.log({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+console.log('Configuração de conexão PostgreSQL:');
+console.log({
+  user: process.env.PGUSER || 'não definido',
+  host: process.env.PGHOST || 'não definido',
+  database: process.env.PGDATABASE || 'não definido',
+  port: process.env.PGPORT || 'não definido',
+  connectionString,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
 export const pool = new Pool({
   connectionString,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
