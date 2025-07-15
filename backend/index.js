@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { pool } from './db.js';
 const JWT_SECRET = 'sua_chave_secreta'; 
 
 const app = express();
@@ -12,16 +12,6 @@ app.use(express.json());
 
 import dotenv from 'dotenv';
 dotenv.config();
-
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error('DATABASE_URL não definida. Configure no Railway ou no arquivo .env local.');
-}
-
-const pool = new Pool({
-  connectionString,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
 
 app.get('/api/ping', async (req, res) => {
   const result = await pool.query('SELECT NOW()');
