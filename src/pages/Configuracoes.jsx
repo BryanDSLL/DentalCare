@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useTema } from '../contexts/ThemeContext';
 import { Moon, Sun } from 'lucide-react';
 import { servicoConfiguracoes } from '../services/configuracoesService.js';
+import { useOutletContext } from 'react-router-dom';
 
 const Configuracoes = () => {
   const { theme, toggleTheme } = useTema();
+  const { showSidebarButton } = useOutletContext();
   const [clinicData, setClinicData] = useState({
     name: 'Clínica Odontológica',
     address: '',
@@ -70,8 +72,10 @@ const Configuracoes = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="ml-14 text-2xl font-bold text-gray-900 dark:text-white">Configurações</h1>
-        <p className="ml-14 text-gray-600 dark:text-gray-400">
+        <h1 className={`text-2xl font-bold text-gray-900 dark:text-white ${showSidebarButton ? 'ml-14' : ''} lg:ml-0`}>
+          Configurações
+        </h1>
+        <p className="mt-5 text-gray-600 dark:text-gray-400">
           Gerencie as configurações da sua clínica
         </p>
       </div>

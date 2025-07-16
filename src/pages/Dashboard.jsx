@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { servicoConsultas } from '../services/consultasService.js';
 import { Calendar, Clock, User, Phone } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 
 const Dashboard = () => {
+  const { showSidebarButton } = useOutletContext();
   const [todaysAppointments, setTodaysAppointments] = useState([]);
   const [stats, setStats] = useState({
     today: 0,
@@ -61,8 +63,10 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="ml-14 text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="ml-14 text-gray-600 dark:text-gray-400">
+        <h1 className={`text-2xl font-bold text-gray-900 dark:text-white ${showSidebarButton ? 'ml-14' : ''} lg:ml-0`}>
+          Dashboard
+        </h1>
+        <p className="mt-5 text-gray-600 dark:text-gray-400">
           Bem-vindo ao sistema de agendamento
         </p>
       </div>

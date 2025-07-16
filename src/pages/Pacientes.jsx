@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { servicoPacientes } from '../services/pacientesService.js';
 import Modal from '../components/Modal';
 import { Plus, Edit, Trash2, Search, User } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 
 const Pacientes = () => {
+  const { showSidebarButton } = useOutletContext();
   const [pacientes, setPacientes] = useState([]);
   const [pacientesFiltrados, setPacientesFiltrados] = useState([]);
   const [termoBusca, setTermoBusca] = useState('');
@@ -122,7 +124,9 @@ const Pacientes = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="ml-14 text-2xl font-bold text-gray-900 dark:text-white">Pacientes</h1>
+        <h1 className={`text-2xl font-bold text-gray-900 dark:text-white ${showSidebarButton ? 'ml-14' : ''} lg:ml-0`}>
+          Pacientes
+        </h1>
         <button
           onClick={() => setModalAberto(true)}
           className="btn btn-primary px-4 py-2 text-sm font-medium"
