@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { servicoConsultas } from '../services/consultasService.js';
 import { servicoPacientes } from '../services/pacientesService.js';
 import Modal from '../components/Modal';
@@ -20,7 +21,8 @@ const Agendamentos = () => {
     type: '',
     notes: ''
   });
-  const [formErrors, setFormErrors] = useState({});
+  // const [formErrors, setFormErrors] = useState({});
+  const { showSidebarButton } = useOutletContext();
 
   const loadAppointmentsAsync = async () => {
     setLoading(true);
@@ -50,14 +52,6 @@ const Agendamentos = () => {
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
-    // Data obrigatória
-    if (!formData.date) {
-      errors.date = 'A data é obrigatória';
-    }
-    return errors;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -198,7 +192,7 @@ const Agendamentos = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Agendamentos</h1>
+        <h1 className={`text-2xl font-bold text-gray-900 dark:text-white ${showSidebarButton ? 'ml-14' : ''} lg:ml-0`}>Agendamentos</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="btn btn-primary px-4 py-2 text-sm font-medium"
@@ -338,9 +332,9 @@ const Agendamentos = () => {
                 className="input"
                 required
               />
-              {formErrors.date && (
+              {/* {formErrors.date && (
                 <div className="text-red-600 text-xs mt-1">{formErrors.date}</div>
-              )}
+              )} */}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
