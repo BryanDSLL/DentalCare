@@ -175,13 +175,11 @@ const Pacientes = () => {
                       {paciente.nome}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {paciente.email} • {paciente.telefone}
+                      {paciente.email}
                     </p>
-                    {paciente.data_nascimento && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Nascimento: {formatarData(paciente.data_nascimento)}
-                      </p>
-                    )}
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {paciente.telefone}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
