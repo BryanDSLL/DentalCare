@@ -1,9 +1,13 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const servicoConsultas = {
-  async getAgendamentos() {
+  async getAgendamentos(start, end) {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/agendamentos`, {
+    let url = `${API_URL}/agendamentos`;
+    if (start && end) {
+      url += `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+    }
+    const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     return response.json();

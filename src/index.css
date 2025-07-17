@@ -1,3 +1,22 @@
+/* Esconde o ícone nativo do input type="date" para Chrome, Edge, Safari e Firefox */
+.hide-date-icon::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+.hide-date-icon::-webkit-clear-button {
+  display: none;
+}
+.hide-date-icon::-webkit-inner-spin-button, .hide-date-icon::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hide-date-icon::-ms-expand {
+  display: none;
+}
+.hide-date-icon {
+  position: relative;
+  z-index: 1;
+}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -46,4 +65,24 @@
   .card {
     @apply rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800;
   }
+
+.hide-time-icon::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+.hide-time-icon::-webkit-clear-button {
+  display: none;
+}
+.hide-time-icon::-webkit-inner-spin-button, .hide-time-icon::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hide-time-icon::-ms-expand {
+  display: none;
+}
+.hide-time-icon {
+  position: relative;
+  z-index: 1;
+}
+
 }

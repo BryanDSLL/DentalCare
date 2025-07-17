@@ -3,13 +3,28 @@ import { useOutletContext } from 'react-router-dom';
 import { servicoConsultas } from '../services/consultasService.js';
 import { servicoPacientes } from '../services/pacientesService.js';
 import Modal from '../components/Modal';
-import { Clock, Plus, Edit, Trash2 } from 'lucide-react';
+import { Clock, Plus, Edit, Trash2, Calendar } from 'lucide-react';
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [pendingDate, setPendingDate] = useState(selectedDate);
+  // Data inicial: hoje, Data final: hoje + 7 dias
+  const today = new Date();
+  const formatDate = (d) => d.toISOString().split('T')[0];
+  const defaultStart = formatDate(today);
+  const defaultEnd = formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7));
+  const [dateStart, setDateStart] = useState(defaultStart);
+  const [dateEnd, setDateEnd] = useState(defaultEnd);
+  const [theme, setTheme] = useState(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+
+  // Atualiza o tema ao trocar
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [loading, setLoading] = useState(false); 
@@ -27,8 +42,8 @@ const Agendamentos = () => {
   const loadAppointmentsAsync = async () => {
     setLoading(true);
     try {
-      // Busca todos agendamentos do backend
-      const appointmentsData = await servicoConsultas.getAgendamentos();
+      // Busca agendamentos apenas do período selecionado
+      const appointmentsData = await servicoConsultas.getAgendamentos(dateStart, dateEnd);
       setAppointments(appointmentsData);
       console.log('Agendamentos recebidos:', appointmentsData);
     } catch (error) {
@@ -41,7 +56,8 @@ const Agendamentos = () => {
   useEffect(() => {
     loadAppointmentsAsync();
     loadPatients();
-  }, [selectedDate]);
+    // eslint-disable-next-line
+  }, [dateStart, dateEnd]);
 
   const loadPatients = async () => {
     try {
@@ -155,31 +171,8 @@ const Agendamentos = () => {
     return new Date(year, month - 1, day, hour, min, sec);
   }
 
-  const filteredAppointments = appointments.filter(appointment => {
-    if (!appointment.data) return false;
-    let localDate;
-    if (typeof appointment.data === 'string') {
-      localDate = parseDateLocal(appointment.data);
-      if (isNaN(localDate.getTime())) return false;
-    } else {
-      localDate = new Date(appointment.data);
-      if (isNaN(localDate.getTime())) return false;
-    }
-    const [selYear, selMonth, selDay] = selectedDate.split('-').map(Number);
-    const match = (
-      localDate.getFullYear() === selYear &&
-      localDate.getMonth() + 1 === selMonth &&
-      localDate.getDate() === selDay
-    );
-    if (match) {
-      console.log('Match:', {
-        data: appointment.data,
-        localDate: localDate.toISOString(),
-        selectedDate
-      });
-    }
-    return match;
-  });
+  // O backend já retorna apenas os agendamentos do período, não precisa filtrar aqui
+  const filteredAppointments = appointments;
 
   if (loading) {
     return (
@@ -192,7 +185,7 @@ const Agendamentos = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className={`text-2xl font-bold text-gray-900 dark:text-white ${showSidebarButton ? 'ml-14' : ''} lg:ml-0`}>Agendamentos</h1>
+        <h1 className={`text-2xl font-bold text-gray-900 dark:text-white ${showSidebarButton ? 'ml-14' : ''} lg:ml-0`}>Agenda</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="btn btn-primary px-4 py-2 text-sm font-medium"
@@ -202,33 +195,62 @@ const Agendamentos = () => {
         </button>
       </div>
 
-      {/* Date Filter */}
+      {/* Date Range Filter */}
       <div className="card">
-        <div className="flex items-center space-x-4">
-          <input
-            type="date"
-            value={pendingDate}
-            onChange={(e) => setPendingDate(e.target.value)}
-            className="input w-40 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors [&::-webkit-calendar-picker-indicator]:invert-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
-          />
-          <button
-            type="button"
-            className="btn btn-primary px-4 py-2 text-sm ml-2"
-            onClick={() => {
-              // Garante formato yyyy-MM-dd
-              const normalized = new Date(pendingDate).toISOString().split('T')[0];
-              setSelectedDate(normalized);
-            }}
-          >
-            OK
-          </button>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col">
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Data Inicial</label>
+            <div className="relative">
+              <input
+                type="date"
+                value={dateStart}
+                max={dateEnd}
+                onChange={e => setDateStart(e.target.value)}
+                className="input w-40 pr-10 hide-date-icon bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                ref={el => (window.dateStartInput = el)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-transparent p-0 m-0 border-0 focus:outline-none"
+                onClick={() => window.dateStartInput && window.dateStartInput.showPicker ? window.dateStartInput.showPicker() : window.dateStartInput && window.dateStartInput.focus()}
+                aria-label="Selecionar data inicial"
+                tabIndex={0}
+                style={{lineHeight:0}}
+              >
+                <Calendar className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Data Final</label>
+            <div className="relative">
+              <input
+                type="date"
+                value={dateEnd}
+                min={dateStart}
+                onChange={e => setDateEnd(e.target.value)}
+                className="input w-40 pr-10 hide-date-icon bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                ref={el => (window.dateEndInput = el)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-transparent p-0 m-0 border-0 focus:outline-none"
+                onClick={() => window.dateEndInput && window.dateEndInput.showPicker ? window.dateEndInput.showPicker() : window.dateEndInput && window.dateEndInput.focus()}
+                aria-label="Selecionar data final"
+                tabIndex={0}
+                style={{lineHeight:0}}
+              >
+                <Calendar className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Appointments List */}
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Consultas - {selectedDate.split('-').reverse().join('/')}
+          Consultas de {dateStart.split('-').reverse().join('/')} até {dateEnd.split('-').reverse().join('/')}
         </h2>
         {filteredAppointments.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">
@@ -252,6 +274,9 @@ const Agendamentos = () => {
                       <h3 className="font-medium text-gray-900 dark:text-white">
                         {patient ? patient.nome : 'Paciente'}
                       </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(appointment.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                      </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         {time} - {appointment.tipo}
                       </p>

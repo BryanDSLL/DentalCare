@@ -138,8 +138,21 @@ app.post('/api/agendamentos', authMiddleware, async (req, res) => {
 
 app.get('/api/agendamentos', authMiddleware, async (req, res) => {
   const idusuario = req.user.id;
-  // Retorna data como string local, sem timezone
-  const result = await pool.query("SELECT id, idusuario, idpaciente, to_char(data, 'YYYY-MM-DD HH24:MI:SS') as data, tipo, notas FROM agendamentos WHERE idusuario = $1 ORDER BY data", [idusuario]);
+  const { start, end } = req.query;
+  let result;
+  if (start && end) {
+    // Filtro por período (inclusive)
+    result = await pool.query(
+      "SELECT id, idusuario, idpaciente, to_char(data, 'YYYY-MM-DD HH24:MI:SS') as data, tipo, notas FROM agendamentos WHERE idusuario = $1 AND data::date >= $2::date AND data::date <= $3::date ORDER BY data",
+      [idusuario, start, end]
+    );
+  } else {
+    // Sem filtro, retorna tudo
+    result = await pool.query(
+      "SELECT id, idusuario, idpaciente, to_char(data, 'YYYY-MM-DD HH24:MI:SS') as data, tipo, notas FROM agendamentos WHERE idusuario = $1 ORDER BY data",
+      [idusuario]
+    );
+  }
   res.json(result.rows);
 });
 

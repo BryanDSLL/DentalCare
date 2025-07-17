@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTema } from '../contexts/ThemeContext';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Clock } from 'lucide-react';
 import { servicoConfiguracoes } from '../services/configuracoesService.js';
 import { useOutletContext } from 'react-router-dom';
 
@@ -68,6 +68,10 @@ const Configuracoes = () => {
       setLoading(false);
     }
   };
+
+  // Refs para inputs de hora
+  const startTimeRef = useRef(null);
+  const endTimeRef = useRef(null);
 
   return (
     <div className="space-y-6">
@@ -176,29 +180,55 @@ const Configuracoes = () => {
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                   Início
                 </label>
-                <input
-                  type="time"
-                  value={clinicData.workingHours.start}
-                  onChange={(e) => setClinicData({
-                    ...clinicData,
-                    workingHours: { ...clinicData.workingHours, start: e.target.value }
-                  })}
-                  className="input"
-                />
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={clinicData.workingHours.start}
+                    onChange={(e) => setClinicData({
+                      ...clinicData,
+                      workingHours: { ...clinicData.workingHours, start: e.target.value }
+                    })}
+                    className="input pr-10 hide-time-icon"
+                    ref={startTimeRef}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none z-10 bg-transparent p-0 m-0 border-0"
+                    onClick={() => startTimeRef.current && startTimeRef.current.showPicker ? startTimeRef.current.showPicker() : startTimeRef.current && startTimeRef.current.focus()}
+                    aria-label="Selecionar horário de início"
+                    tabIndex={0}
+                    style={{lineHeight:0}}
+                  >
+                    <Clock className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                   Fim
                 </label>
-                <input
-                  type="time"
-                  value={clinicData.workingHours.end}
-                  onChange={(e) => setClinicData({
-                    ...clinicData,
-                    workingHours: { ...clinicData.workingHours, end: e.target.value }
-                  })}
-                  className="input"
-                />
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={clinicData.workingHours.end}
+                    onChange={(e) => setClinicData({
+                      ...clinicData,
+                      workingHours: { ...clinicData.workingHours, end: e.target.value }
+                    })}
+                    className="input pr-10 hide-time-icon"
+                    ref={endTimeRef}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none z-10 bg-transparent p-0 m-0 border-0"
+                    onClick={() => endTimeRef.current && endTimeRef.current.showPicker ? endTimeRef.current.showPicker() : endTimeRef.current && endTimeRef.current.focus()}
+                    aria-label="Selecionar horário de fim"
+                    tabIndex={0}
+                    style={{lineHeight:0}}
+                  >
+                    <Clock className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
