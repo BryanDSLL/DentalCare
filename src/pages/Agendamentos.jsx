@@ -34,19 +34,47 @@ const Agendamentos = () => {
     date: '',
     time: '',
     type: '',
-    notes: ''
+    notes: '',
+    status: 'Pendente' // novo campo de status
   });
+  const [authError, setAuthError] = useState(null);
+  const [statusMenuOpenId, setStatusMenuOpenId] = useState(null);
+  const [statusFilters, setStatusFilters] = useState({ Pendente: true, Realizado: true, Cancelado: true });
+  const statusOptions = [
+    { value: 'Pendente', label: 'Pendente', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
+    { value: 'Realizado', label: 'Realizado', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+    { value: 'Cancelado', label: 'Cancelado', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' }
+  ];
   // const [formErrors, setFormErrors] = useState({});
   const { showSidebarButton } = useOutletContext();
 
   const loadAppointmentsAsync = async () => {
     setLoading(true);
+    setAuthError(null);
     try {
-      // Busca agendamentos apenas do período selecionado
-      const appointmentsData = await servicoConsultas.getAgendamentos(dateStart, dateEnd);
-      setAppointments(appointmentsData);
-      console.log('Agendamentos recebidos:', appointmentsData);
+      // Monta array de status selecionados
+      const selectedStatus = Object.keys(statusFilters).filter(s => statusFilters[s]);
+      const appointmentsData = await servicoConsultas.getAgendamentos(dateStart, dateEnd, selectedStatus);
+      if (Array.isArray(appointmentsData)) {
+        setAppointments(appointmentsData);
+        // Log detalhado dos status recebidos
+        console.log('Status dos agendamentos:', appointmentsData.map(a => a.status));
+      } else {
+        setAppointments([]);
+        if (appointmentsData.error && (appointmentsData.error.includes('Token inválido') || appointmentsData.error.includes('Unauthorized'))) {
+          setAuthError('Faça login para visualizar os agendamentos.');
+        } else {
+          setAuthError('Erro ao carregar agendamentos.');
+        }
+        console.error('Erro ao carregar agendamentos:', appointmentsData.error || appointmentsData);
+      }
     } catch (error) {
+      setAppointments([]);
+      if (error.message && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
+        setAuthError('Faça login para visualizar os agendamentos.');
+      } else {
+        setAuthError('Erro ao carregar agendamentos.');
+      }
       console.error('Error loading appointments:', error);
     } finally {
       setLoading(false);
@@ -57,7 +85,7 @@ const Agendamentos = () => {
     loadAppointmentsAsync();
     loadPatients();
     // eslint-disable-next-line
-  }, [dateStart, dateEnd]);
+  }, [dateStart, dateEnd, statusFilters]);
 
   const loadPatients = async () => {
     try {
@@ -76,7 +104,8 @@ const Agendamentos = () => {
         idpaciente: formData.patientId,
         data: `${formData.date}T${formData.time}:00`,
         tipo: formData.type,
-        notas: formData.notes
+        notas: formData.notes,
+        status: formData.status // inclui status
       };
       if (editingAppointment) {
         await servicoConsultas.updateAgendamento(editingAppointment.id, appointmentData);
@@ -91,7 +120,8 @@ const Agendamentos = () => {
         date: '',
         time: '',
         type: '',
-        notes: ''
+        notes: '',
+        status: 'Pendente'
       });
       // Atualiza agendamentos para a data selecionada
       await loadAppointmentsAsync();
@@ -117,7 +147,8 @@ const Agendamentos = () => {
       date: appointmentDate.toISOString().split('T')[0],
       time: appointmentDate.toTimeString().slice(0, 5),
       type: appointment.tipo || '',
-      notes: appointment.notas || ''
+      notes: appointment.notas || '',
+      status: appointment.status || 'Pendente' // preenche o status
     });
     setIsModalOpen(true);
   };
@@ -174,12 +205,58 @@ const Agendamentos = () => {
   // O backend já retorna apenas os agendamentos do período, não precisa filtrar aqui
   const filteredAppointments = appointments;
 
+  // Responsividade: detecta se é mobile
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth < 768);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Fecha o menu de status ao clicar fora
+  useEffect(() => {
+    if (statusMenuOpenId === null) return;
+    function handleClickOutside(e) {
+      const btn = document.getElementById(`status-btn-${statusMenuOpenId}`);
+      const menu = document.querySelector(`#status-menu-${statusMenuOpenId}`);
+      if (btn && btn.contains(e.target)) return;
+      if (menu && menu.contains(e.target)) return;
+      setStatusMenuOpenId(null);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [statusMenuOpenId]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-gray-500 dark:text-gray-400">Carregando...</div>
       </div>
     );
+  }
+
+  if (authError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-64">
+        <div className="text-red-600 dark:text-red-400 font-semibold text-lg mb-2">{authError}</div>
+        <button
+          className="btn btn-primary px-4 py-2 text-sm"
+          onClick={() => window.location.href = '/login'}
+        >
+          Fazer Login
+        </button>
+      </div>
+    );
+  }
+
+  // Função para decidir se o menu deve abrir acima ou abaixo do botão
+  function getShouldOpenAbove(id) {
+    if (typeof window === 'undefined') return false;
+    const btn = document.getElementById(`status-btn-${id}`);
+    const spaceBelow = btn ? window.innerHeight - btn.getBoundingClientRect().bottom : 999;
+    return spaceBelow < 140;
   }
 
   return (
@@ -244,6 +321,29 @@ const Agendamentos = () => {
               </button>
             </div>
           </div>
+          {/* Filtros de status */}
+          <div className="flex flex-col gap-1 ml-2">
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Status</label>
+            <div className="flex gap-2">
+              {['Pendente', 'Realizado', 'Cancelado'].map(status => (
+                <label key={status} className="flex items-center gap-1 text-xs font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={statusFilters[status]}
+                    onChange={e => {
+                      setStatusFilters(f => ({ ...f, [status]: e.target.checked }));
+                    }}
+                    className="accent-current"
+                  />
+                  <span className={
+                    status === 'Realizado' ? 'text-green-700 dark:text-green-300' :
+                    status === 'Cancelado' ? 'text-red-700 dark:text-red-300' :
+                    'text-yellow-700 dark:text-yellow-300'
+                  }>{status}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -287,19 +387,66 @@ const Agendamentos = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleEdit(appointment)}
-                      className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                    >
-                      <Edit size={20} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(appointment.id)}
-                      className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                  {/* Layout responsivo: mobile (vertical), desktop (horizontal) */}
+                  <div
+                    className={
+                      isMobile
+                        ? 'flex flex-col items-end space-y-2' // Mobile: coluna, botão em cima
+                        : 'flex items-center space-x-2' // Desktop: linha
+                    }
+                  >
+                    {/* Botão de status */}
+                    <div className="relative inline-block">
+                      <button
+                        type="button"
+                        className={`px-2 py-1 text-xs rounded font-semibold focus:outline-none transition-all shadow-sm border border-gray-200 dark:border-gray-700
+  ${appointment.status === 'Realizado' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : appointment.status === 'Cancelado' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'}`}
+                        onClick={() => setStatusMenuOpenId(statusMenuOpenId === appointment.id ? null : appointment.id)}
+                        aria-label="Alterar status"
+                        id={`status-btn-${appointment.id}`}
+                      >
+                        {appointment.status || 'Pendente'}
+                      </button>
+                      {statusMenuOpenId === appointment.id && (
+                        <div
+                          id={`status-menu-${appointment.id}`}
+                          className={`absolute left-0 z-20 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700 w-32`}
+                          style={{
+                            top: getShouldOpenAbove(appointment.id) ? 'auto' : '100%',
+                            bottom: getShouldOpenAbove(appointment.id) ? '100%' : 'auto'
+                          }}
+                        >
+                          {statusOptions.map(option => (
+                            <button
+                              key={option.value}
+                              className={`block w-full text-left px-3 py-2 text-xs font-semibold bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 ${option.value === 'Realizado' ? 'text-green-700 dark:text-green-300' : option.value === 'Cancelado' ? 'text-red-700 dark:text-red-300' : 'text-yellow-700 dark:text-yellow-300'} hover:opacity-80 focus:outline-none ${appointment.status === option.value ? 'ring-2 ring-primary-500' : ''}`}
+                              onClick={async () => {
+                                await servicoConsultas.updateAgendamento(appointment.id, { ...appointment, status: option.value });
+                                setStatusMenuOpenId(null);
+                                await loadAppointmentsAsync();
+                              }}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Ícones de editar/excluir */}
+                    <div className={isMobile ? 'flex items-center space-x-2 mt-2' : 'flex items-center space-x-2'}>
+                      <button
+                        onClick={() => handleEdit(appointment)}
+                        className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                      >
+                        <Edit size={20} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(appointment.id)}
+                        className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -320,7 +467,8 @@ const Agendamentos = () => {
             date: '',
             time: '',
             type: '',
-            notes: ''
+            notes: '',
+            status: 'Pendente'
           });
         }}
         title={editingAppointment ? 'Editar Consulta' : 'Nova Consulta'}
@@ -427,6 +575,24 @@ const Agendamentos = () => {
               rows="3"
               placeholder="Observações sobre a consulta... (opcional)"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Status
+              </label>
+              <select
+                value={formData.status}
+                onChange={e => setFormData({ ...formData, status: e.target.value })}
+                className={`input ${formData.status === 'Realizado' ? 'text-green-700 dark:text-green-300' : formData.status === 'Cancelado' ? 'text-red-700 dark:text-red-300' : 'text-yellow-700 dark:text-yellow-300'}`}
+                required
+              >
+                <option value="Pendente" className="text-yellow-700 dark:text-yellow-300">Pendente</option>
+                <option value="Realizado" className="text-green-700 dark:text-green-300">Realizado</option>
+                <option value="Cancelado" className="text-red-700 dark:text-red-300">Cancelado</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">

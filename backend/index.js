@@ -121,14 +121,13 @@ app.delete('/api/pacientes/:id', authMiddleware, async (req, res) => {
 
 //////////////// Rotas de agendamentos ////////////////
 app.post('/api/agendamentos', authMiddleware, async (req, res) => {
-  // Recebe os campos do frontend: idpaciente, data, tipo, notas
-  const { idpaciente, data, tipo, notas } = req.body;
+  // Recebe os campos do frontend: idpaciente, data, tipo, notas, status
+  const { idpaciente, data, tipo, notas, status } = req.body;
   const idusuario = req.user.id;
   try {
-    // Ajusta para inserir usando os nomes do frontend
     const result = await pool.query(
-      'INSERT INTO agendamentos (idusuario, idpaciente, data, tipo, notas) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [idusuario, idpaciente, data, tipo, notas]
+      'INSERT INTO agendamentos (idusuario, idpaciente, data, tipo, notas, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [idusuario, idpaciente, data, tipo, notas, status || 'Pendente']
     );
     res.json(result.rows[0]);
   } catch {
@@ -138,32 +137,46 @@ app.post('/api/agendamentos', authMiddleware, async (req, res) => {
 
 app.get('/api/agendamentos', authMiddleware, async (req, res) => {
   const idusuario = req.user.id;
-  const { start, end } = req.query;
+  const { start, end, status } = req.query;
   let result;
-  if (start && end) {
-    // Filtro por período (inclusive)
-    result = await pool.query(
-      "SELECT id, idusuario, idpaciente, to_char(data, 'YYYY-MM-DD HH24:MI:SS') as data, tipo, notas FROM agendamentos WHERE idusuario = $1 AND data::date >= $2::date AND data::date <= $3::date ORDER BY data",
-      [idusuario, start, end]
-    );
-  } else {
-    // Sem filtro, retorna tudo
-    result = await pool.query(
-      "SELECT id, idusuario, idpaciente, to_char(data, 'YYYY-MM-DD HH24:MI:SS') as data, tipo, notas FROM agendamentos WHERE idusuario = $1 ORDER BY data",
-      [idusuario]
-    );
+  let statusArray = [];
+  if (status) {
+    try {
+      statusArray = JSON.parse(status);
+    } catch {
+      statusArray = Array.isArray(status) ? status : [status];
+    }
   }
+  // Se nenhum status estiver selecionado, retorna vazio
+  if (statusArray.length === 0) {
+    return res.json([]);
+  }
+  let query = "SELECT id, idusuario, idpaciente, to_char(data, 'YYYY-MM-DD HH24:MI:SS') as data, tipo, notas, status FROM agendamentos WHERE idusuario = $1";
+  let params = [idusuario];
+  let paramIdx = 2;
+  if (start && end) {
+    query += ` AND data::date >= $${paramIdx}::date AND data::date <= $${paramIdx + 1}::date`;
+    params.push(start, end);
+    paramIdx += 2;
+  }
+  if (statusArray.length > 0) {
+    query += ` AND status = ANY($${paramIdx})`;
+    params.push(statusArray);
+    paramIdx++;
+  }
+  query += " ORDER BY data";
+  result = await pool.query(query, params);
   res.json(result.rows);
 });
 
 app.put('/api/agendamentos/:id', authMiddleware, async (req, res) => {
   const idusuario = req.user.id;
   const { id } = req.params;
-  const { idpaciente, data, tipo, notas } = req.body;
+  const { idpaciente, data, tipo, notas, status } = req.body;
   try {
     const result = await pool.query(
-      'UPDATE agendamentos SET idpaciente=$1, data=$2, tipo=$3, notas=$4 WHERE id=$5 AND idusuario=$6 RETURNING *',
-      [idpaciente, data, tipo, notas, id, idusuario]
+      'UPDATE agendamentos SET idpaciente=$1, data=$2, tipo=$3, notas=$4, status=$5 WHERE id=$6 AND idusuario=$7 RETURNING *',
+      [idpaciente, data, tipo, notas, status || 'Pendente', id, idusuario]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Agendamento não encontrado' });
     res.json(result.rows[0]);

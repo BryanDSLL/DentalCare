@@ -1,11 +1,20 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const servicoConsultas = {
-  async getAgendamentos(start, end) {
+  async getAgendamentos(start, end, statusArray) {
     const token = localStorage.getItem('token');
     let url = `${API_URL}/agendamentos`;
+    const params = [];
     if (start && end) {
-      url += `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+      params.push(`start=${encodeURIComponent(start)}`);
+      params.push(`end=${encodeURIComponent(end)}`);
+    }
+    // Sempre envia o filtro de status, mesmo se todos marcados
+    if (statusArray && statusArray.length > 0) {
+      params.push(`status=${encodeURIComponent(JSON.stringify(statusArray))}`);
+    }
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
     }
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` }
