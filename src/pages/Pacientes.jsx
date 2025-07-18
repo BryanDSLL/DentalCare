@@ -100,10 +100,6 @@ const Pacientes = () => {
     }
   };
 
-  const formatarData = (dataString) => {
-    if (!dataString) return '';
-    return new Date(dataString).toLocaleDateString('pt-BR');
-  };
 
   // Função para formatar telefone (99) 99999-9999
   function formatarTelefone(valor) {

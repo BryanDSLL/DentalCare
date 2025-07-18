@@ -350,28 +350,49 @@ const Agendamentos = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Data
               </label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="input"
-                required
-              />
-              {/* {formErrors.date && (
-                <div className="text-red-600 text-xs mt-1">{formErrors.date}</div>
-              )} */}
+              <div className="relative">
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="input pr-10 appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  required
+                  ref={el => (window.modalDateInput = el)}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 p-0 m-0 border-0 bg-transparent focus:outline-none"
+                  onClick={() => window.modalDateInput && window.modalDateInput.showPicker ? window.modalDateInput.showPicker() : window.modalDateInput && window.modalDateInput.focus()}
+                  tabIndex={0}
+                  aria-label="Selecionar data"
+                >
+                  <Calendar className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-blue-600'}`} />
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Hora
               </label>
-              <input
-                type="time"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                className="input"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  className="input pr-10 appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  required
+                  ref={el => (window.modalTimeInput = el)}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 p-0 m-0 border-0 bg-transparent focus:outline-none"
+                  onClick={() => window.modalTimeInput && window.modalTimeInput.showPicker ? window.modalTimeInput.showPicker() : window.modalTimeInput && window.modalTimeInput.focus()}
+                  tabIndex={0}
+                  aria-label="Selecionar hora"
+                >
+                  <Clock className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-green-600'}`} />
+                </button>
+              </div>
             </div>
           </div>
 
