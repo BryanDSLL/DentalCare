@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAutenticacao } from '../contexts/AuthContext';
 import { useTema } from '../contexts/ThemeContext';
@@ -16,6 +16,8 @@ import {
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarHover, setSidebarHover] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const { logout } = useAutenticacao();
   const { theme, toggleTheme } = useTema();
   const location = useLocation();
@@ -39,6 +41,12 @@ const Layout = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -101,49 +109,60 @@ const Layout = () => {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex min-h-0 flex-1 flex-col bg-white dark:bg-gray-800 shadow-lg">
+      <div className={`hidden lg:fixed lg:inset-y-0 lg:flex transition-[width] ${sidebarHover ? 'duration-700' : 'duration-500'}`} style={{ width: sidebarHover ? 272 : 72 }}>
+        <div
+          className={`flex min-h-0 flex-1 flex-col bg-white dark:bg-gray-800 shadow-lg transition-[width] ${sidebarHover ? 'duration-700' : 'duration-500'}`}
+          onMouseEnter={() => setSidebarHover(true)}
+          onMouseLeave={() => setSidebarHover(false)}
+          style={{ width: sidebarHover ? 272 : 72, minWidth: sidebarHover ? 272 : 72, transition: `width ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}
+        >
           {/* Logo */}
           <div className="flex h-16 items-center px-4 space-x-3">
             <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
               <Activity className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">DentalCare</span>
+            {sidebarHover && (
+              <span className="text-xl font-bold text-gray-900 dark:text-white transition-opacity duration-300">DentalCare</span>
+            )}
           </div>
-          <nav className="flex-1 px-4 py-4">
+          <nav className="flex-1 px-2 py-4">
             {navigation.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
+                  className={`flex items-center px-2 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
                     isActive(item.href)
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-100'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   }`}
+                  style={{ justifyContent: sidebarHover ? 'flex-start' : 'center', transition: `justify-content ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}
                 >
-                  <Icon size={20} className="mr-3" />
-                  {item.name}
+                  <Icon size={24} />
+                  {sidebarHover && (
+                    <span className="ml-3 transition-opacity duration-300">{item.name}</span>
+                  )}
                 </Link>
               );
             })}
           </nav>
           {/* Theme & Logout */}
-          <div className="px-4 py-4 mt-auto flex flex-col gap-2 border-t border-gray-200 dark:border-gray-700">
+          <div className={`px-2 py-4 mt-auto flex flex-col gap-2 border-t border-gray-200 dark:border-gray-700 ${sidebarHover ? '' : 'items-center'}`}
+            style={{ transition: `padding ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}>
             <button
               onClick={toggleTheme}
-              className="flex items-center p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md"
+              className={`flex items-center p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md ${sidebarHover ? '' : 'justify-center'}`}
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-              <span className="ml-2">Tema</span>
+              {sidebarHover && <span className="ml-2">Tema</span>}
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-md"
+              className={`flex items-center p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-md ${sidebarHover ? '' : 'justify-center'}`}
             >
-              <LogOut size={20} className="mr-2" />
-              Sair
+              <LogOut size={20} className={sidebarHover ? 'mr-2' : ''} />
+              {sidebarHover && <span>Sair</span>}
             </button>
           </div>
         </div>
@@ -166,8 +185,8 @@ const Layout = () => {
       </div>
 
       {/* Main content */}
-      <div className={`lg:pl-64 transition-all duration-300 ${sidebarOpen ? 'pl-0' : ''}`}>
-        <main className="p-4 lg:p-8">
+      <div className={`transition-all ${sidebarHover ? 'duration-700' : 'duration-500'}`} style={{ minHeight: '100vh' }}>
+        <main className="p-4 lg:p-8" style={{ marginLeft: !isMobile ? (sidebarHover ? 256 : 64) : 0, transition: `margin-left ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}>
           <Outlet context={{ showSidebarButton: !sidebarOpen }} />
         </main>
       </div>
