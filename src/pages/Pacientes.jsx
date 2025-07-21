@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { servicoPacientes } from '../services/pacientesService.js';
 import Modal from '../components/Modal';
-import { Plus, Edit, Trash2, Search, User } from 'lucide-react';
+import ModalAviso from '../components/ModalAviso';
+import { Plus, Edit, Trash2, Search, User, Calendar } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 
 const Pacientes = () => {
@@ -10,6 +11,8 @@ const Pacientes = () => {
   const [pacientesFiltrados, setPacientesFiltrados] = useState([]);
   const [termoBusca, setTermoBusca] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
+  const [avisoAberto, setAvisoAberto] = useState(false);
+  const [avisoMsg, setAvisoMsg] = useState('');
   const [pacienteEditando, setPacienteEditando] = useState(null);
   const [carregando, setCarregando] = useState(false);
   const [dadosFormulario, setDadosFormulario] = useState({
@@ -53,6 +56,17 @@ const Pacientes = () => {
 
   const aoSubmeter = async (e) => {
     e.preventDefault();
+    // Validação: paciente deve ter pelo menos 4 anos
+    if (dadosFormulario.data_nascimento) {
+      const hoje = new Date();
+      const nascimento = new Date(dadosFormulario.data_nascimento);
+      const idade = hoje.getFullYear() - nascimento.getFullYear() - (hoje < new Date(hoje.getFullYear(), nascimento.getMonth(), nascimento.getDate()) ? 1 : 0);
+      if (idade < 4) {
+        setAvisoMsg('Não é possível cadastrar pacientes com menos de 4 anos de idade.');
+        setAvisoAberto(true);
+        return;
+      }
+    }
     try {
       const pacientePayload = { ...dadosFormulario };
       if (pacienteEditando) {
@@ -272,12 +286,25 @@ const Pacientes = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Data de Nascimento
             </label>
-            <input
-              type="date"
-              value={dadosFormulario.data_nascimento}
-              onChange={(e) => setDadosFormulario({ ...dadosFormulario, data_nascimento: e.target.value })}
-              className="input"
-            />
+            <div className="relative">
+              <input
+                type="date"
+                value={dadosFormulario.data_nascimento}
+                onChange={(e) => setDadosFormulario({ ...dadosFormulario, data_nascimento: e.target.value })}
+                className="input pr-10 appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                required
+                ref={el => (window.pacienteDateInput = el)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 p-0 m-0 border-0 bg-transparent focus:outline-none"
+                onClick={() => window.pacienteDateInput && window.pacienteDateInput.showPicker ? window.pacienteDateInput.showPicker() : window.pacienteDateInput && window.pacienteDateInput.focus()}
+                tabIndex={0}
+                aria-label="Selecionar data de nascimento"
+              >
+                <Calendar className={`h-5 w-5 ${document.documentElement.classList.contains('dark') ? 'text-white' : 'text-blue-600'}`} />
+              </button>
+            </div>
           </div>
 
           <div>
@@ -313,6 +340,14 @@ const Pacientes = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de Aviso */}
+      <ModalAviso
+        isOpen={avisoAberto}
+        onClose={() => setAvisoAberto(false)}
+        title="Cadastro Inválido"
+        message={avisoMsg}
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { servicoConsultas } from '../services/consultasService.js';
 import { servicoPacientes } from '../services/pacientesService.js';
 import Modal from '../components/Modal';
+import ModalAviso from '../components/ModalAviso';
 import { Clock, Plus, Edit, Trash2, Calendar } from 'lucide-react';
 
 const Agendamentos = () => {
@@ -40,6 +41,8 @@ const Agendamentos = () => {
   const [authError, setAuthError] = useState(null);
   const [statusMenuOpenId, setStatusMenuOpenId] = useState(null);
   const [statusFilters, setStatusFilters] = useState({ Pendente: true, Realizado: true, Cancelado: true });
+  const [avisoAberto, setAvisoAberto] = useState(false);
+  const [avisoMsg, setAvisoMsg] = useState('');
   const statusOptions = [
     { value: 'Pendente', label: 'Pendente', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
     { value: 'Realizado', label: 'Realizado', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
@@ -99,6 +102,14 @@ const Agendamentos = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Validação: não permitir datas/horas passadas
+    const now = new Date();
+    const dataSelecionada = new Date(`${formData.date}T${formData.time}:00`);
+    if (dataSelecionada < now && !editingAppointment) {
+      setAvisoMsg('Não é possível agendar uma consulta para uma data e hora que já passaram.');
+      setAvisoAberto(true);
+      return;
+    }
     try {
       const appointmentData = {
         idpaciente: formData.patientId,
@@ -615,6 +626,14 @@ const Agendamentos = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de Aviso */}
+      <ModalAviso
+        isOpen={avisoAberto}
+        onClose={() => setAvisoAberto(false)}
+        title="Agendamento Inválido"
+        message={avisoMsg}
+      />
     </div>
   );
 };
