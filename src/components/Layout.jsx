@@ -8,7 +8,6 @@ import {
   Users,
   Settings,
   LogOut,
-  X,
   Moon,
   Sun,
   Activity
@@ -59,14 +58,24 @@ const Layout = () => {
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white dark:bg-gray-800 shadow-xl transition-transform duration-300 ease-in-out"
           style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)', willChange: 'transform' }}>
           {/* Logo */}
-          <div className="flex h-16 items-center px-4 space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
-              <Activity className="w-6 h-6 text-white" />
+          <div className="flex h-16 items-center px-4" style={{ minWidth: 0 }}>
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full flex-shrink-0 transition-none">
+              <Activity className="w-6 h-6 text-white" style={{ minWidth: 24, minHeight: 24, transition: 'none' }} />
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">DentalCare</span>
-            <button onClick={() => setSidebarOpen(false)} className="ml-auto text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-              <X size={24} />
-            </button>
+            {sidebarHover && (
+              <span className="text-2xl font-extrabold text-gray-900 dark:text-white transition-opacity duration-300 animate-typing overflow-hidden whitespace-nowrap ml-3">
+                {"DentalCare".split("").map((char, i) => (
+                  <span key={i} style={{
+                    animation: `typingLetter 0.03s linear forwards`,
+                    animationDelay: `${i * 0.04}s`,
+                    opacity: 0,
+                    display: 'inline-block',
+                  }}>
+                    {char}
+                  </span>
+                ))}
+              </span>
+            )}
           </div>
           <nav className="flex-1 px-4 py-4">
             {navigation.map((item) => {
@@ -109,39 +118,73 @@ const Layout = () => {
       </div>
 
       {/* Desktop sidebar */}
-      <div className={`hidden lg:fixed lg:inset-y-0 lg:flex transition-[width] ${sidebarHover ? 'duration-700' : 'duration-500'}`} style={{ width: sidebarHover ? 272 : 72 }}>
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex"
+        style={{
+          width: sidebarHover ? 240 : 72,
+          minWidth: 72, // minWidth sempre 72 para evitar "aperto" no início da animação
+          transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
         <div
-          className={`flex min-h-0 flex-1 flex-col bg-white dark:bg-gray-800 shadow-lg transition-[width] ${sidebarHover ? 'duration-700' : 'duration-500'}`}
+          className="flex min-h-0 flex-1 flex-col bg-white dark:bg-gray-800 shadow-lg"
           onMouseEnter={() => setSidebarHover(true)}
           onMouseLeave={() => setSidebarHover(false)}
-          style={{ width: sidebarHover ? 272 : 72, minWidth: sidebarHover ? 272 : 72, transition: `width ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}
+          style={{
+            width: sidebarHover ? 240 : 72,
+            minWidth: 72, // minWidth sempre 72 para evitar "aperto" no início da animação
+            transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+          }}
         >
           {/* Logo */}
-          <div className="flex h-16 items-center px-4 space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
-              <Activity className="w-6 h-6 text-white" />
+          <div className="flex h-16 items-center px-4" style={{ minWidth: 0 }}>
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full flex-shrink-0 transition-none">
+              <Activity className="w-6 h-6 text-white" style={{ minWidth: 24, minHeight: 24, transition: 'none' }} />
             </div>
             {sidebarHover && (
-              <span className="text-xl font-bold text-gray-900 dark:text-white transition-opacity duration-300">DentalCare</span>
+              <span className="text-2xl font-extrabold text-gray-900 dark:text-white transition-opacity duration-300 animate-typing overflow-hidden whitespace-nowrap ml-3">
+                {"DentalCare".split("").map((char, i) => (
+                  <span key={i} style={{
+                    animation: `typingLetter 0.03s linear forwards`,
+                    animationDelay: `${i * 0.04}s`,
+                    opacity: 0,
+                    display: 'inline-block',
+                  }}>
+                    {char}
+                  </span>
+                ))}
+              </span>
             )}
           </div>
-          <nav className="flex-1 px-2 py-4">
+          <nav className="flex-1 px-2 py-4 flex flex-col justify-start gap-1">
             {navigation.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-2 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
+                  className={`flex items-center h-12 px-2 py-0 text-lg font-semibold rounded-lg transition-colors ${
                     isActive(item.href)
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-100'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   }`}
-                  style={{ justifyContent: sidebarHover ? 'flex-start' : 'center', transition: `justify-content ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}
+                  style={{ justifyContent: sidebarHover ? 'flex-start' : 'center', alignItems: 'center', transition: `justify-content ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}
                 >
-                  <Icon size={24} />
+                  <span className="flex items-center h-full">
+                    <Icon size={24} style={{ animation: 'none', opacity: 1 }} />
+                  </span>
                   {sidebarHover && (
-                    <span className="ml-3 transition-opacity duration-300">{item.name}</span>
+                    <span className="ml-3 transition-opacity duration-300 animate-typing overflow-hidden whitespace-nowrap">
+                      {item.name.split("").map((char, i) => (
+                        <span key={i} style={{
+                          animation: `typingLetter 0.03s linear forwards`,
+                          animationDelay: `${i * 0.04}s`,
+                          opacity: 0,
+                          display: 'inline-block',
+                        }}>
+                          {char}
+                        </span>
+                      ))}
+                    </span>
                   )}
                 </Link>
               );
@@ -185,11 +228,19 @@ const Layout = () => {
       </div>
 
       {/* Main content */}
-      <div className={`transition-all ${sidebarHover ? 'duration-700' : 'duration-500'}`} style={{ minHeight: '100vh' }}>
-        <main className="p-4 lg:p-8" style={{ marginLeft: !isMobile ? (sidebarHover ? 256 : 64) : 0, transition: `margin-left ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}>
+      <div className={`transition-all ${sidebarHover ? 'duration-700' : 'duration-500'}`}
+        style={{ minHeight: '100vh' }}>
+        <main className="p-4 lg:p-8" style={{ marginLeft: !isMobile ? (sidebarHover ? 240 : 64) : 0, transition: `margin-left ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}>
           <Outlet context={{ showSidebarButton: !sidebarOpen }} />
         </main>
       </div>
+      <style>
+        {`
+        @keyframes typingLetter {
+          to { opacity: 1; }
+        }
+        `}
+      </style>
     </div>
   );
 };
