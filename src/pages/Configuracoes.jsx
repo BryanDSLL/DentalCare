@@ -15,7 +15,8 @@ const Configuracoes = () => {
     workingHours: {
       start: '08:00',
       end: '18:00'
-    }
+    },
+    whatsappMessage: 'Olá {nome}, lembramos que sua consulta está agendada para {data} às {hora} na {clinica}.'
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -34,7 +35,8 @@ const Configuracoes = () => {
           workingHours: {
             start: config.horario_inicio || '08:00',
             end: config.horario_fim || '18:00'
-          }
+          },
+          whatsappMessage: config.whatsappMessage || 'Olá {nome}, lembramos que sua consulta está agendada para {data} às {hora} na {clinica}.'
         });
       } catch {
         setError('Erro ao carregar configurações');
@@ -57,7 +59,8 @@ const Configuracoes = () => {
         telefone: clinicData.phone,
         email: clinicData.email,
         horario_inicio: clinicData.workingHours.start,
-        horario_fim: clinicData.workingHours.end
+        horario_fim: clinicData.workingHours.end,
+        whatsappMessage: clinicData.whatsappMessage
       });
       console.log('Configuração salva:', response); // <-- log detalhado
       setSuccess(true);
@@ -233,6 +236,44 @@ const Configuracoes = () => {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Mensagem padrão do WhatsApp
+            </label>
+            <div className="relative" style={{ minHeight: '72px' }}>
+              <textarea
+                value={clinicData.whatsappMessage}
+                onChange={e => setClinicData({ ...clinicData, whatsappMessage: e.target.value })}
+                className="input font-mono pr-10"
+                rows={3}
+                placeholder="Mensagem personalizada para o paciente"
+                style={{ background: 'transparent', position: 'relative', zIndex: 2, color: 'transparent', caretColor: '#2563eb', minHeight: '72px' }}
+              />
+              {/* Overlay para destacar variáveis */}
+              <div
+                className="absolute inset-0 pointer-events-none px-3 py-2 font-mono text-sm whitespace-pre-wrap break-words"
+                style={{ zIndex: 3, color: theme === 'dark' ? '#fff' : '#374151', minHeight: '72px' }}
+              >
+                {clinicData.whatsappMessage.split(/(\{nome\}|\{data\}|\{hora\}|\{clinica\})/g).map((part, i) =>
+                  ['{nome}', '{data}', '{hora}', '{clinica}'].includes(part)
+                    ? <b key={i} className="text-blue-600 dark:text-blue-400">{part}</b>
+                    : <span key={i}>{part}</span>
+                )}
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Use variáveis: <b className="text-blue-600 dark:text-blue-400">{'{nome}'}</b>, <b className="text-blue-600 dark:text-blue-400">{'{data}'}</b>, <b className="text-blue-600 dark:text-blue-400">{'{hora}'}</b>, <b className="text-blue-600 dark:text-blue-400">{'{clinica}'}</b>.<br/>
+              <span>Exemplo:</span>
+              <span className="block mt-1">
+                {clinicData.whatsappMessage.split(/(\{nome\}|\{data\}|\{hora\}|\{clinica\})/g).map((part, i) =>
+                  ['{nome}', '{data}', '{hora}', '{clinica}'].includes(part)
+                    ? <b key={i} className="text-blue-600 dark:text-blue-400">{part}</b>
+                    : <span key={i}>{part}</span>
+                )}
+              </span>
+            </div>
+          </div>
+
           <div className="flex justify-end pt-4">
             <button
               type="submit"
@@ -259,7 +300,7 @@ const Configuracoes = () => {
         <div className="space-y-3">
           <div className="flex justify-between">
             <span className="text-gray-600 dark:text-gray-400">Versão</span>
-            <span className="font-medium text-gray-900 dark:text-white">1.0.0</span>
+            <span className="font-medium text-gray-900 dark:text-white">1.4.0</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600 dark:text-gray-400">Último Backup</span>

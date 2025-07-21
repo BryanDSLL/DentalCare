@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { servicoConsultas } from '../services/consultasService.js';
 import { servicoPacientes } from '../services/pacientesService.js';
+import { servicoConfiguracoes } from '../services/configuracoesService.js';
 import { Calendar, Clock, User } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react'; // Ícone WhatsApp
 
 const Dashboard = () => {
   const { showSidebarButton } = useOutletContext();
@@ -15,11 +17,22 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(false);
   const [statusMenuOpenId, setStatusMenuOpenId] = useState(null);
+  const [clinicName, setClinicName] = useState('Clínica Odontológica');
   const statusMenuRef = useRef(null);
 
   useEffect(() => {
     loadDashboardData();
     loadPatients();
+    // Carrega nome da clínica das configurações
+    async function fetchClinicName() {
+      try {
+        const config = await servicoConfiguracoes.getConfiguracoes();
+        setClinicName(config?.nome || 'Clínica Odontológica');
+      } catch {
+        setClinicName('Clínica Odontológica');
+      }
+    }
+    fetchClinicName();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -99,6 +112,10 @@ const Dashboard = () => {
     };
   };
 
+  function getWhatsappLink(numero, mensagem) {
+    const encodedMessage = encodeURIComponent(mensagem);
+    return `https://wa.me/${numero}?text=${encodedMessage}`;
+  }
 
   if (loading) {
     return (
@@ -203,7 +220,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="relative">
+                    <div className="relative flex items-center space-x-2">
                       <button
                         id={`status-btn-${appointment.id}`}
                         type="button"
@@ -214,17 +231,48 @@ const Dashboard = () => {
                       >
                         {appointment.status || 'Pendente'}
                       </button>
+                      <button
+                        type="button"
+                        className="ml-2 p-2 rounded-full bg-green-500 hover:bg-green-600 text-white shadow focus:outline-none"
+                        aria-label="WhatsApp"
+                        onClick={() => {
+                          const telefone = patient?.telefone?.replace(/\D/g, '');
+                          if (!telefone) return alert('Paciente sem telefone cadastrado!');
+                          // Usa a data/hora formatada do card
+                          const { date, time } = formatDateTime(appointment.data);
+                          const mensagem = `Olá ${patient?.nome || ''}, lembramos que sua consulta está agendada para ${date} às ${time} na ${clinicName}.`;
+                          window.open(getWhatsappLink(`55${telefone}`, mensagem), '_blank');
+                        }}
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                      </button>
                       {statusMenuOpenId === appointment.id && (
                         <div
+                          ref={statusMenuRef}
                           id={`status-menu-${appointment.id}`}
-                          className={`absolute left-0 z-20 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700 w-36`}
-                          style={{
-                            top: '100%',
-                            left: 0,
-                            right: 'auto',
-                            minWidth: '90px',
-                            marginTop: 4,
-                          }}
+                          className="absolute left-0 z-20 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700 w-36"
+                          style={(() => {
+                            const btn = document.getElementById(`status-btn-${appointment.id}`);
+                            if (btn) {
+                              const btnRect = btn.getBoundingClientRect();
+                              const menuHeight = 120; // Aproximado
+                              const spaceBelow = window.innerHeight - btnRect.bottom;
+                              if (spaceBelow < menuHeight + 16) {
+                                return {
+                                  bottom: '100%',
+                                  left: 0,
+                                  marginBottom: 4,
+                                  minWidth: '90px',
+                                };
+                              }
+                            }
+                            return {
+                              top: '100%',
+                              left: 0,
+                              marginTop: 4,
+                              minWidth: '90px',
+                            };
+                          })()}
                         >
                           {[{ value: 'Pendente', label: 'Pendente', color: 'text-yellow-700 dark:text-yellow-300' }, { value: 'Realizado', label: 'Realizado', color: 'text-green-700 dark:text-green-300' }, { value: 'Cancelado', label: 'Cancelado', color: 'text-red-700 dark:text-red-300' }].map(option => (
                             <button

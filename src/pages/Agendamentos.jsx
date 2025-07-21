@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { servicoConsultas } from '../services/consultasService.js';
 import { servicoPacientes } from '../services/pacientesService.js';
+import { servicoConfiguracoes } from '../services/configuracoesService.js';
 import Modal from '../components/Modal';
 import ModalAviso from '../components/ModalAviso';
-import { Clock, Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import { Clock, Plus, Edit, Trash2, Calendar, MessageCircle } from 'lucide-react';
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [clinicName, setClinicName] = useState('DentalCare');
   // Data inicial: hoje, Data final: hoje + 7 dias
   const today = new Date();
   const formatDate = (d) => d.toISOString().split('T')[0];
@@ -87,6 +89,16 @@ const Agendamentos = () => {
   useEffect(() => {
     loadAppointmentsAsync();
     loadPatients();
+    // Busca nome da clínica das configurações
+    async function fetchClinicName() {
+      try {
+        const config = await servicoConfiguracoes.getConfiguracoes();
+        setClinicName(config?.nome || 'DentalCare');
+      } catch {
+        setClinicName('DentalCare');
+      }
+    }
+    fetchClinicName();
     // eslint-disable-next-line
   }, [dateStart, dateEnd, statusFilters]);
 
@@ -239,6 +251,11 @@ const Agendamentos = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [statusMenuOpenId]);
+
+  function getWhatsappLink(numero, mensagem) {
+    const encodedMessage = encodeURIComponent(mensagem);
+    return `https://wa.me/${numero}?text=${encodedMessage}`;
+  }
 
   if (loading) {
     return (
@@ -407,7 +424,7 @@ const Agendamentos = () => {
                     }
                   >
                     {/* Botão de status */}
-                    <div className="relative inline-block">
+                    <div className="relative flex items-center space-x-2">
                       <button
                         type="button"
                         className={`px-4 py-2 min-w-[90px] text-xs rounded font-semibold focus:outline-none transition-all shadow-sm border border-gray-200 dark:border-gray-700
@@ -417,6 +434,23 @@ const Agendamentos = () => {
                         id={`status-btn-${appointment.id}`}
                       >
                         {appointment.status || 'Pendente'}
+                      </button>
+                      <button
+                        type="button"
+                        className="ml-2 p-2 rounded-full bg-green-500 hover:bg-green-600 text-white shadow focus:outline-none"
+                        aria-label="WhatsApp"
+                        onClick={() => {
+                          // Busca o telefone do paciente
+                          const paciente = patients.find(p => p.id === appointment.idpaciente);
+                          const telefone = paciente?.telefone?.replace(/\D/g, '');
+                          if (!telefone) return alert('Paciente sem telefone cadastrado!');
+                          // Monta mensagem padrão
+                          const { date: formattedDate, time: formattedTime } = formatDateTime(appointment.data);
+                          const mensagem = `Olá ${paciente?.nome || ''}, lembramos que sua consulta está agendada para ${formattedDate} às ${formattedTime} na ${clinicName}.`;
+                          window.open(getWhatsappLink(`55${telefone}`, mensagem), '_blank');
+                        }}
+                      >
+                        <MessageCircle className="w-5 h-5" />
                       </button>
                       {statusMenuOpenId === appointment.id && (
                         <div
