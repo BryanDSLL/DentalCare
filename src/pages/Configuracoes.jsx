@@ -175,12 +175,12 @@ const Configuracoes = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Horário de Funcionamento
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 w-80">
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                   Início
                 </label>
-                <div className="relative">
+                <div className="relative w-32">
                   <input
                     type="time"
                     value={clinicData.workingHours.start}
@@ -188,18 +188,18 @@ const Configuracoes = () => {
                       ...clinicData,
                       workingHours: { ...clinicData.workingHours, start: e.target.value }
                     })}
-                    className="input pr-10 hide-time-icon"
+                    className="input pr-8 hide-time-icon text-base"
                     ref={startTimeRef}
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none z-10 bg-transparent p-0 m-0 border-0"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 focus:outline-none z-10 bg-transparent p-0 m-0 border-0"
                     onClick={() => startTimeRef.current && startTimeRef.current.showPicker ? startTimeRef.current.showPicker() : startTimeRef.current && startTimeRef.current.focus()}
                     aria-label="Selecionar horário de início"
                     tabIndex={0}
                     style={{lineHeight:0}}
                   >
-                    <Clock className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
+                    <Clock className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
                   </button>
                 </div>
               </div>
@@ -207,7 +207,7 @@ const Configuracoes = () => {
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                   Fim
                 </label>
-                <div className="relative">
+                <div className="relative w-32">
                   <input
                     type="time"
                     value={clinicData.workingHours.end}
@@ -215,18 +215,18 @@ const Configuracoes = () => {
                       ...clinicData,
                       workingHours: { ...clinicData.workingHours, end: e.target.value }
                     })}
-                    className="input pr-10 hide-time-icon"
+                    className="input pr-8 hide-time-icon text-base"
                     ref={endTimeRef}
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none z-10 bg-transparent p-0 m-0 border-0"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 focus:outline-none z-10 bg-transparent p-0 m-0 border-0"
                     onClick={() => endTimeRef.current && endTimeRef.current.showPicker ? endTimeRef.current.showPicker() : endTimeRef.current && endTimeRef.current.focus()}
                     aria-label="Selecionar horário de fim"
                     tabIndex={0}
                     style={{lineHeight:0}}
                   >
-                    <Clock className={`h-5 w-5 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
+                    <Clock className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`} />
                   </button>
                 </div>
               </div>

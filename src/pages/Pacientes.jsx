@@ -286,21 +286,22 @@ const Pacientes = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Data de Nascimento
             </label>
-            <div className="relative">
+            <div className="relative w-36">
               <input
                 type="date"
                 value={dadosFormulario.data_nascimento}
                 onChange={(e) => setDadosFormulario({ ...dadosFormulario, data_nascimento: e.target.value })}
-                className="input pr-10 appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                className="input pr-8 appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-base"
                 required
                 ref={el => (window.pacienteDateInput = el)}
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 p-0 m-0 border-0 bg-transparent focus:outline-none"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 p-0 m-0 border-0 bg-transparent focus:outline-none z-10"
                 onClick={() => window.pacienteDateInput && window.pacienteDateInput.showPicker ? window.pacienteDateInput.showPicker() : window.pacienteDateInput && window.pacienteDateInput.focus()}
                 tabIndex={0}
                 aria-label="Selecionar data de nascimento"
+                style={{lineHeight:0}}
               >
                 <Calendar className={`h-5 w-5 ${document.documentElement.classList.contains('dark') ? 'text-white' : 'text-blue-600'}`} />
               </button>

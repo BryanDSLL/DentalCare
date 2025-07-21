@@ -1,4 +1,9 @@
-/* Esconde o ícone nativo do input type="date" para Chrome, Edge, Safari e Firefox */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .hide-date-icon::-webkit-calendar-picker-indicator {
   opacity: 0;
   display: none;
@@ -17,11 +22,6 @@
   position: relative;
   z-index: 1;
 }
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 :root {
   --background: 0 0% 100%;
@@ -66,6 +66,9 @@
     @apply rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800;
   }
 
+}
+/* Fim do bloco @layer components */
+
 .hide-time-icon::-webkit-calendar-picker-indicator {
   opacity: 0;
   display: none;
@@ -85,4 +88,10 @@
   z-index: 1;
 }
 
+@keyframes modalScale {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-modal-scale {
+  animation: modalScale 0.6s cubic-bezier(0.4,0,0.2,1);
 }

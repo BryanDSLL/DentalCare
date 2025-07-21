@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { servicoConsultas } from '../services/consultasService.js';
 import { servicoPacientes } from '../services/pacientesService.js';
 import { Calendar, Clock, User } from 'lucide-react';
@@ -15,12 +15,29 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(false);
   const [statusMenuOpenId, setStatusMenuOpenId] = useState(null);
+  const statusMenuRef = useRef(null);
 
   useEffect(() => {
     loadDashboardData();
     loadPatients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) {
+        setStatusMenuOpenId(null);
+      }
+    }
+    if (statusMenuOpenId !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [statusMenuOpenId]);
 
   const defaultStatusArray = ['Pendente', 'Realizado', 'Cancelado'];
 
@@ -190,7 +207,7 @@ const Dashboard = () => {
                       <button
                         id={`status-btn-${appointment.id}`}
                         type="button"
-                        className={`px-2 py-1 text-xs rounded font-semibold focus:outline-none transition-all shadow-sm border border-gray-200 dark:border-gray-700
+                        className={`px-4 py-2 min-w-[90px] text-xs rounded font-semibold focus:outline-none transition-all shadow-sm border border-gray-200 dark:border-gray-700
                           ${appointment.status === 'Realizado' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : appointment.status === 'Cancelado' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'}`}
                         onClick={() => setStatusMenuOpenId(statusMenuOpenId === appointment.id ? null : appointment.id)}
                         aria-label="Alterar status"
@@ -199,11 +216,14 @@ const Dashboard = () => {
                       </button>
                       {statusMenuOpenId === appointment.id && (
                         <div
-                          className={`absolute left-0 z-20 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700 w-32 ${window.innerHeight - (document.getElementById(`status-btn-${appointment.id}`)?.getBoundingClientRect().bottom ?? 0) < 180 ? 'bottom-0 mb-2' : 'mt-2'}`}
+                          id={`status-menu-${appointment.id}`}
+                          className={`absolute left-0 z-20 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700 w-36`}
                           style={{
-                            // fallback for SSR or if element not found
-                            top: window.innerHeight - (document.getElementById(`status-btn-${appointment.id}`)?.getBoundingClientRect().bottom ?? 0) < 180 ? 'auto' : '0.5rem',
-                            bottom: window.innerHeight - (document.getElementById(`status-btn-${appointment.id}`)?.getBoundingClientRect().bottom ?? 0) < 180 ? '2.5rem' : 'auto'
+                            top: '100%',
+                            left: 0,
+                            right: 'auto',
+                            minWidth: '90px',
+                            marginTop: 4,
                           }}
                         >
                           {[{ value: 'Pendente', label: 'Pendente', color: 'text-yellow-700 dark:text-yellow-300' }, { value: 'Realizado', label: 'Realizado', color: 'text-green-700 dark:text-green-300' }, { value: 'Cancelado', label: 'Cancelado', color: 'text-red-700 dark:text-red-300' }].map(option => (

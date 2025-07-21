@@ -120,8 +120,8 @@ const Layout = () => {
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex"
         style={{
-          width: sidebarHover ? 240 : 72,
-          minWidth: 72, // minWidth sempre 72 para evitar "aperto" no início da animação
+          width: sidebarHover ? 220 : 72,
+          minWidth: 72, 
           transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
@@ -130,8 +130,8 @@ const Layout = () => {
           onMouseEnter={() => setSidebarHover(true)}
           onMouseLeave={() => setSidebarHover(false)}
           style={{
-            width: sidebarHover ? 240 : 72,
-            minWidth: 72, // minWidth sempre 72 para evitar "aperto" no início da animação
+            width: sidebarHover ? 220 : 72,
+            minWidth: 72, 
             transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
           }}
         >
@@ -162,7 +162,7 @@ const Layout = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center h-12 px-2 py-0 text-lg font-semibold rounded-lg transition-colors ${
+                  className={`flex items-center h-12 px-2 py-0 text-base font-medium rounded-lg transition-colors ${
                     isActive(item.href)
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-100'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -170,7 +170,7 @@ const Layout = () => {
                   style={{ justifyContent: sidebarHover ? 'flex-start' : 'center', alignItems: 'center', transition: `justify-content ${sidebarHover ? '0.7s' : '0.5s'} cubic-bezier(0.4,0,0.2,1)` }}
                 >
                   <span className="flex items-center h-full">
-                    <Icon size={24} style={{ animation: 'none', opacity: 1 }} />
+                    <Icon size={21} style={{ animation: 'none', opacity: 1 }} />
                   </span>
                   {sidebarHover && (
                     <span className="ml-3 transition-opacity duration-300 animate-typing overflow-hidden whitespace-nowrap">
