@@ -1,6 +1,31 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const servicoPacientes = {
+  async uploadArquivos(pacienteId, formData) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/pacientes/${pacienteId}/arquivos`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+    if (!response.ok) {
+      throw new Error('Erro ao enviar arquivos');
+    }
+    return response.json();
+  },
+
+  async listarArquivos(pacienteId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/pacientes/${pacienteId}/arquivos`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Erro ao buscar arquivos');
+    }
+    return response.json();
+  },
   async buscarPacientes() {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/pacientes`, {

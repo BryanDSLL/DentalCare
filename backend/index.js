@@ -3,6 +3,8 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from './db.js';
+import multer from 'multer';
+import path from 'path';
 const JWT_SECRET = 'sua_chave_secreta'; 
 
 const app = express();
@@ -12,6 +14,19 @@ app.use(express.json());
 
 import dotenv from 'dotenv';
 dotenv.config();
+
+const upload = multer({
+  dest: path.join(process.cwd(), 'uploads'),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.txt', '.pdf', '.csv', '.xls', '.xlsx'];
+    if (allowed.includes(path.extname(file.originalname).toLowerCase())) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido'));
+    }
+  }
+});
 
 app.get('/api/ping', async (req, res) => {
   const result = await pool.query('SELECT NOW()');
@@ -81,6 +96,47 @@ app.post('/api/pacientes', authMiddleware, async (req, res) => {
   }
 });
 
+// Upload múltiplos arquivos para paciente
+app.post('/api/pacientes/:id/arquivos', authMiddleware, upload.single('arquivos'), async (req, res) => {
+  const pacienteId = req.params.id;
+  const idusuario = req.user.id;
+  if (!req.file) {
+    return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+  }
+  try {
+    // Remove arquivo anterior, se existir
+    await pool.query('DELETE FROM arquivos_paciente WHERE paciente_id = $1', [pacienteId]);
+    const file = req.file;
+    const buffer = await import('fs').then(fs => fs.readFileSync(file.path));
+    await pool.query(
+      'INSERT INTO arquivos_paciente (paciente_id, nome_arquivo, tipo_arquivo, arquivo) VALUES ($1, $2, $3, $4)',
+      [pacienteId, file.originalname, file.mimetype, buffer]
+    );
+    await import('fs').then(fs => fs.unlinkSync(file.path)); // Remove arquivo do disco
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao salvar arquivos', details: err.message });
+  }
+});
+
+// Listar arquivos de um paciente
+app.get('/api/pacientes/:id/arquivos', authMiddleware, async (req, res) => {
+  const pacienteId = req.params.id;
+  const result = await pool.query('SELECT id, nome_arquivo, tipo_arquivo, data_upload FROM arquivos_paciente WHERE paciente_id = $1 ORDER BY data_upload DESC', [pacienteId]);
+  res.json(result.rows);
+});
+
+// Download de arquivo
+app.get('/api/pacientes/:id/arquivos/:arquivoId', authMiddleware, async (req, res) => {
+  const { id, arquivoId } = req.params;
+  const result = await pool.query('SELECT nome_arquivo, tipo_arquivo, arquivo FROM arquivos_paciente WHERE id = $1 AND paciente_id = $2', [arquivoId, id]);
+  if (result.rows.length === 0) return res.status(404).json({ error: 'Arquivo não encontrado' });
+  const file = result.rows[0];
+  res.setHeader('Content-Disposition', `attachment; filename="${file.nome_arquivo}"`);
+  res.setHeader('Content-Type', file.tipo_arquivo);
+  res.send(file.arquivo);
+});
+
 app.get('/api/pacientes', authMiddleware, async (req, res) => {
   const idusuario = req.user.id;
   const result = await pool.query('SELECT * FROM pacientes WHERE idusuario = $1 ORDER BY nome', [idusuario]);
@@ -120,14 +176,21 @@ app.delete('/api/pacientes/:id', authMiddleware, async (req, res) => {
 });
 
 //////////////// Rotas de agendamentos ////////////////
-app.post('/api/agendamentos', authMiddleware, async (req, res) => {
+app.post('/api/agendamentos', authMiddleware, upload.single('arquivo'), async (req, res) => {
   // Recebe os campos do frontend: idpaciente, data, tipo, notas, status
-  const { idpaciente, data, tipo, notas, status } = req.body;
+  const { idpaciente, data, tipo, notas } = req.body;
   const idusuario = req.user.id;
+  let arquivo = null;
+  if (req.file) {
+    arquivo = req.file.filename + '_' + req.file.originalname;
+    // Renomeia para manter o nome original
+    const fs = await import('fs');
+    fs.renameSync(req.file.path, path.join(req.file.destination, arquivo));
+  }
   try {
     const result = await pool.query(
-      'INSERT INTO agendamentos (idusuario, idpaciente, data, tipo, notas, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [idusuario, idpaciente, data, tipo, notas, status || 'Pendente']
+      'INSERT INTO agendamentos (idusuario, idpaciente, data, tipo, notas, arquivo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [idusuario, idpaciente, data, tipo, notas, arquivo]
     );
     res.json(result.rows[0]);
   } catch {
@@ -169,20 +232,32 @@ app.get('/api/agendamentos', authMiddleware, async (req, res) => {
   res.json(result.rows);
 });
 
-app.put('/api/agendamentos/:id', authMiddleware, async (req, res) => {
+app.put('/api/agendamentos/:id', authMiddleware, upload.single('arquivo'), async (req, res) => {
   const idusuario = req.user.id;
   const { id } = req.params;
-  const { idpaciente, data, tipo, notas, status } = req.body;
+  const { idpaciente, data, tipo, notas } = req.body;
+  let arquivo = null;
+  if (req.file) {
+    arquivo = req.file.filename + '_' + req.file.originalname;
+    const fs = await import('fs');
+    fs.renameSync(req.file.path, path.join(req.file.destination, arquivo));
+  }
   try {
     const result = await pool.query(
-      'UPDATE agendamentos SET idpaciente=$1, data=$2, tipo=$3, notas=$4, status=$5 WHERE id=$6 AND idusuario=$7 RETURNING *',
-      [idpaciente, data, tipo, notas, status || 'Pendente', id, idusuario]
+      'UPDATE agendamentos SET idpaciente=$1, data=$2, tipo=$3, notas=$4, arquivo=$5 WHERE id=$6 AND idusuario=$7 RETURNING *',
+      [idpaciente, data, tipo, notas, arquivo, id, idusuario]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Agendamento não encontrado' });
     res.json(result.rows[0]);
   } catch {
     res.status(400).json({ error: 'Erro ao atualizar agendamento' });
   }
+});
+
+app.get('/api/agendamentos/arquivo/:nome', authMiddleware, (req, res) => {
+  const nome = req.params.nome;
+  const filePath = path.join(process.cwd(), 'uploads', nome);
+  res.download(filePath);
 });
 
 app.delete('/api/agendamentos/:id', authMiddleware, async (req, res) => {
