@@ -178,7 +178,7 @@ app.delete('/api/pacientes/:id', authMiddleware, async (req, res) => {
 //////////////// Rotas de agendamentos ////////////////
 app.post('/api/agendamentos', authMiddleware, upload.single('arquivo'), async (req, res) => {
   // Recebe os campos do frontend: idpaciente, data, tipo, notas, status
-  const { idpaciente, data, tipo, notas } = req.body;
+  const { idpaciente, data, tipo, notas, status } = req.body;
   const idusuario = req.user.id;
   let arquivo = null;
   if (req.file) {
@@ -189,8 +189,8 @@ app.post('/api/agendamentos', authMiddleware, upload.single('arquivo'), async (r
   }
   try {
     const result = await pool.query(
-      'INSERT INTO agendamentos (idusuario, idpaciente, data, tipo, notas, arquivo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [idusuario, idpaciente, data, tipo, notas, arquivo]
+      'INSERT INTO agendamentos (idusuario, idpaciente, data, tipo, notas, arquivo, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [idusuario, idpaciente, data, tipo, notas, arquivo, status || 'Pendente']
     );
     res.json(result.rows[0]);
   } catch {
@@ -235,7 +235,7 @@ app.get('/api/agendamentos', authMiddleware, async (req, res) => {
 app.put('/api/agendamentos/:id', authMiddleware, upload.single('arquivo'), async (req, res) => {
   const idusuario = req.user.id;
   const { id } = req.params;
-  const { idpaciente, data, tipo, notas } = req.body;
+  const { idpaciente, data, tipo, notas, status } = req.body;
   let arquivo = null;
   if (req.file) {
     arquivo = req.file.filename + '_' + req.file.originalname;
@@ -244,8 +244,8 @@ app.put('/api/agendamentos/:id', authMiddleware, upload.single('arquivo'), async
   }
   try {
     const result = await pool.query(
-      'UPDATE agendamentos SET idpaciente=$1, data=$2, tipo=$3, notas=$4, arquivo=$5 WHERE id=$6 AND idusuario=$7 RETURNING *',
-      [idpaciente, data, tipo, notas, arquivo, id, idusuario]
+      'UPDATE agendamentos SET idpaciente=$1, data=$2, tipo=$3, notas=$4, arquivo=$5, status=$6 WHERE id=$7 AND idusuario=$8 RETURNING *',
+      [idpaciente, data, tipo, notas, arquivo, status, id, idusuario]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Agendamento não encontrado' });
     res.json(result.rows[0]);
