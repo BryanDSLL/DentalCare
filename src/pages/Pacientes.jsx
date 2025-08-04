@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { servicoPacientes } from '../services/pacientesService.js';
-// ...existing imports...
 import Modal from '../components/Modal';
 import ModalAviso from '../components/ModalAviso';
-import { Plus, Edit, Trash2, Search, User, Calendar, Pencil } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, User, Calendar } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 
 const Pacientes = () => {
@@ -24,8 +23,6 @@ const Pacientes = () => {
     data_nascimento: '',
     observacoes: ''
   });
-  const [arquivos, setArquivos] = useState([]);
-  const [arquivoExistente, setArquivoExistente] = useState(null);
 
   useEffect(() => {
     carregarPacientes();
@@ -72,17 +69,10 @@ const Pacientes = () => {
     }
     try {
       const pacientePayload = { ...dadosFormulario };
-      let pacienteSalvo;
       if (pacienteEditando) {
-        pacienteSalvo = await servicoPacientes.atualizarPaciente(pacienteEditando.id, pacientePayload);
+        await servicoPacientes.atualizarPaciente(pacienteEditando.id, pacientePayload);
       } else {
-        pacienteSalvo = await servicoPacientes.criarPaciente(pacientePayload);
-      }
-      // Upload de arquivos se houver
-      if (arquivos.length > 0) {
-        const formData = new FormData();
-        arquivos.forEach((file) => formData.append('arquivos', file));
-        await servicoPacientes.uploadArquivos((pacienteSalvo.id || pacienteEditando.id), formData);
+        await servicoPacientes.criarPaciente(pacientePayload);
       }
       setModalAberto(false);
       setPacienteEditando(null);
@@ -94,7 +84,6 @@ const Pacientes = () => {
         data_nascimento: '',
         observacoes: ''
       });
-      setArquivos([]);
       carregarPacientes();
     } catch (erro) {
       console.error('Erro ao salvar paciente:', erro);
@@ -110,16 +99,6 @@ const Pacientes = () => {
       endereco: paciente.endereco || '',
       data_nascimento: paciente.data_nascimento ? paciente.data_nascimento.split('T')[0] : '',
       observacoes: paciente.observacoes || ''
-    });
-    // Busca arquivo existente do paciente
-    servicoPacientes.listarArquivos(paciente.id).then(arquivos => {
-      if (arquivos && arquivos.length > 0) {
-        setArquivoExistente(arquivos[0]);
-        setArquivos([]); // Não preenche input file
-      } else {
-        setArquivoExistente(null);
-        setArquivos([]);
-      }
     });
     setModalAberto(true);
   };
@@ -263,7 +242,6 @@ const Pacientes = () => {
               required
             />
           </div>
-          {/* ...existing fields... */}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -343,68 +321,6 @@ const Pacientes = () => {
             />
           </div>
 
-          <div className="flex flex-col items-start">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ficha</label>
-            <div
-              className="w-28 h-28 flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:border-blue-500 transition relative"
-              onClick={() => document.getElementById('ficha-upload').click()}
-            >
-              {(arquivos.length === 0 && !arquivoExistente) ? (
-                <Plus className="w-10 h-10 text-blue-500" />
-              ) : (
-                <Pencil className="w-10 h-10 text-blue-500" />
-              )}
-              <input
-                id="ficha-upload"
-                type="file"
-                accept=".txt,.pdf,.csv,.xls,.xlsx"
-                style={{ display: 'none' }}
-                onChange={e => {
-                  setArquivos(Array.from(e.target.files));
-                  setArquivoExistente(null); // Se selecionar novo arquivo, some o antigo
-                }}
-              />
-              {arquivos.length > 0 && (
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-700 dark:text-gray-300 text-center w-24 truncate">{arquivos[0].name}</span>
-              )}
-              {arquivos.length === 0 && arquivoExistente && (
-                <>
-                  <span
-                    className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-blue-600 dark:text-blue-400 text-center w-24 truncate underline cursor-pointer"
-                    title="Clique para baixar"
-                  >
-                    {arquivoExistente.nome_arquivo}
-                  </span>
-                  <button
-                    type="button"
-                    className="absolute top-2 right-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs shadow"
-                    onClick={async e => {
-                      e.stopPropagation();
-                      const token = localStorage.getItem('token');
-                      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/pacientes/${pacienteEditando.id}/arquivos/${arquivoExistente.id}`;
-                      try {
-                        const response = await fetch(url, {
-                          headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        if (!response.ok) throw new Error('Erro ao baixar arquivo');
-                        const blob = await response.blob();
-                        const link = document.createElement('a');
-                        link.href = window.URL.createObjectURL(blob);
-                        link.download = arquivoExistente.nome_arquivo;
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                      } catch (err) {
-                        alert('Erro ao baixar arquivo');
-                      }
-                    }}
-                  >
-                    Baixar
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"

@@ -19,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/cdssecret" element={<Register />} />
             <Route path="/contratar" element={<LandingContratacao />} /> {/* Nova rota adicionada */}
             <Route path="/" element={
               <ProtectedRoute>
