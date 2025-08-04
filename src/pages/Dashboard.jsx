@@ -297,6 +297,54 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Contratação de Planos */}
+      <div className="card mt-8">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contrate o DentalCare</h2>
+        <form className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          { [
+            {
+              nome: 'Free',
+              preco: 'R$ 0,00',
+              descricao: 'Ideal para testes e uso básico',
+              observacao: 'Até 5 cadastros e até 15 agendamentos',
+              cor: 'border-blue-400',
+              destaque: false,
+              selecionado: true
+            },
+            {
+              nome: 'Starter',
+              preco: 'R$ 9,99',
+              descricao: 'Recursos essenciais para clínicas pequenas',
+              observacao: 'Até 30 cadastros e até 100 agendamentos',
+              cor: 'border-green-400',
+              destaque: false,
+              selecionado: false
+            },
+            {
+              nome: 'Premium',
+              preco: 'R$ 19,99',
+              descricao: 'Funcionalidades avançadas e suporte prioritário',
+              observacao: 'Cadastros e agendamentos ilimitados',
+              cor: 'border-yellow-400',
+              destaque: true,
+              selecionado: false
+            }
+          ].map((plano) => (
+            <div key={plano.nome} className={`flex flex-col items-center justify-between border-2 rounded-xl p-6 shadow-sm bg-white dark:bg-gray-800 transition-all ${plano.cor} ${plano.destaque ? 'scale-105 ring-2 ring-yellow-400' : ''}`}> 
+              <h3 className={`text-xl font-bold mb-2 ${plano.destaque ? 'text-yellow-500 dark:text-yellow-300' : 'text-primary-600 dark:text-primary-300'}`}>{plano.nome}</h3>
+              <p className="text-3xl font-extrabold mb-2 text-gray-900 dark:text-white">{plano.preco}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 text-center">{plano.descricao}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 text-center">{plano.observacao}</p>
+              {plano.selecionado ? (
+                <span className="btn w-full py-2 mt-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold cursor-default">Selecionado</span>
+              ) : (
+                <button type="button" className={`btn btn-primary w-full py-2 mt-2 ${plano.destaque ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : ''}`}>Selecionar</button>
+              )}
+            </div>
+          ))}
+        </form>
+      </div>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Pacientes from './pages/Pacientes.jsx';
 import Agendamentos from './pages/Agendamentos.jsx';
 import Configuracoes from './pages/Configuracoes.jsx';
+import LandingContratacao from './pages/LandingContratacao'; // Importando a nova página
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/contratar" element={<LandingContratacao />} /> {/* Nova rota adicionada */}
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout />

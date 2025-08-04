@@ -9,6 +9,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showDemoInfo, setShowDemoInfo] = useState(false);
   const { login } = useAutenticacao();
   const navigate = useNavigate();
 
@@ -16,17 +17,12 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    if (email === 'admin@dentalcare.com' && password === '123456') {
-      localStorage.setItem('admin-universal', 'true');
-      navigate('/');
-      setIsLoading(false);
-      return;
-    }
+    // Removido usuário admin hardcoded. Agora só autenticação real via backend.
     try {
       await login(email, password);
       navigate('/');
     } catch {
-      setError('Email ou senha incorretos. Use: admin@dentalcare.com / 123456');
+      setError('Email ou senha incorretos.');
     } finally {
       setIsLoading(false);
     }
@@ -107,10 +103,22 @@ const Login = () => {
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Não tem uma conta?{' '}
-              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
-                Cadastre-se aqui
+              <Link to="/contratar" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
+                Contrate o DentalCare
               </Link>
             </p>
+            <button
+              type="button"
+              className="mt-10 text-xs text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+              onClick={() => setShowDemoInfo(v => !v)}
+            >
+              Ver dados da conta demo
+            </button>
+            <div className="text-center mt-2">
+            {showDemoInfo && (
+              <span className="block mt-2 text-xs text-gray-500 dark:text-gray-400">Conta demo: <b>admin@dentalcare.com</b> / <b>123456</b></span>
+            )}
+          </div>
           </div>
         </form>
       </div>
