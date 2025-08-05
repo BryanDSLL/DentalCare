@@ -4,6 +4,8 @@ import { useTema } from '../contexts/ThemeContext';
 import { Activity, ShieldCheck, Smartphone, Users, RefreshCw, Sun, Moon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import fundo from '../assets/fundo.jpg';
+
 const planos = [
 	{
 		nome: 'Free',
@@ -20,8 +22,9 @@ const planos = [
 		descricao: 'Recursos essenciais para clínicas pequenas',
 		observacao: 'Até 30 cadastros e até 100 agendamentos',
 		cor: 'border-green-400',
-		destaque: false,
+		destaque: true,
 		selecionado: false,
+		maisEscolhido: true,
 	},
 	{
 		nome: 'Premium',
@@ -29,7 +32,7 @@ const planos = [
 		descricao: 'Funcionalidades avançadas e suporte prioritário',
 		observacao: 'Cadastros e agendamentos ilimitados',
 		cor: 'border-yellow-400',
-		destaque: true,
+		destaque: false,
 		selecionado: false,
 	},
 ];
@@ -45,7 +48,21 @@ const LandingContratacao = () => {
 	const { theme, toggleTheme } = useTema();
 
 	return (
-		<div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-blue-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+		<div className="min-h-screen flex flex-col relative">
+			{/* Imagem de fundo */}
+			<div className="absolute inset-0 -z-20 w-full h-full">
+				<img
+					src={fundo}
+					alt="Consultório médico"
+					className="w-full h-full object-cover opacity-70 select-none pointer-events-none" // sem blur, opacidade aumentada
+					draggable={false}
+					style={{width: '100%', height: '100%'}}
+				/>
+			</div>
+
+			{/* Gradiente sobre a imagem, agora com transparência */}
+			<div className="absolute inset-0 -z-10 w-full h-full bg-gradient-to-br from-white/60 via-blue-50/60 to-yellow-50/60 dark:from-gray-900/60 dark:via-gray-800/60 dark:to-gray-700/60" />
+			
 			<Header>
 				<div className="absolute right-8 top-4">
 					<button
@@ -61,15 +78,13 @@ const LandingContratacao = () => {
 					</button>
 				</div>
 			</Header>
-			<main className="flex-1 flex flex-col items-center justify-center px-4 pt-32 pb-16">
-				<section className="max-w-5xl w-full mx-auto text-center space-y-10">
-					<div className="flex flex-col items-center gap-4">
+
+			<main className="flex-1 flex flex-col items-center justify-center px-4 pt-28 pb-8">
+				<section className="max-w-5xl w-full mx-auto text-center space-y-8">
+					<div className="flex flex-col items-center gap-3">
 						<div className="flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-full shadow-2xl mb-2">
 							<Activity className="w-12 h-12 text-white" />
 						</div>
-						<h1 className="text-5xl font-extrabold text-gray-900 dark:text-white mb-2">
-							DentalCare
-						</h1>
 						<p className="text-xl text-gray-700 dark:text-gray-300 mb-2">
 							A plataforma definitiva para clínicas odontológicas modernas.
 						</p>
@@ -85,13 +100,25 @@ const LandingContratacao = () => {
 						{planos.map((plano, idx) => (
 							<div
 								key={plano.nome}
-								className={`flex flex-col items-center justify-between rounded-2xl p-12 shadow-xl bg-white dark:bg-gray-800 transition-all duration-300 min-h-[420px] ${
-									plano.destaque
-										? 'scale-105 ring-2 ring-yellow-400 z-10'
-										: ''
-								}`}
-								style={idx === planos.length - 1 ? { borderWidth: '1px', borderColor: '#facc15' } : {}}
+								className={`relative flex flex-col items-center justify-between rounded-2xl p-12 shadow-xl bg-white dark:bg-gray-800 transition-all duration-300 min-h-[420px] hover:scale-[1.10] hover:shadow-2xl cursor-default z-0`}
 							>
+								{/* Glow fixo na borda, sem hover/transição */}
+								<div
+									className="absolute inset-0 rounded-2xl pointer-events-none z-[-1]"
+									style={{
+										boxShadow: plano.destaque
+											? '0 0 32px 8px rgba(34,197,94,0.35)' // verde
+											: idx === planos.length - 1
+												? '0 0 32px 8px rgba(250,204,21,0.25)' // amarelo
+												: '0 0 32px 8px rgba(59,130,246,0.22)', // azul
+										transition: 'box-shadow 0s', // garante que não anima
+									}}
+								/>
+								{plano.maisEscolhido && (
+									<span className="mb-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+										Mais escolhido
+									</span>
+								)}
 								<h3
 									className={`text-3xl font-bold mb-2 ${
 										plano.destaque
@@ -149,7 +176,7 @@ const LandingContratacao = () => {
 					</div>
 					<Link
 						to="/login"
-						className="inline-block px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-bold shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
+						className="inline-block mt-10 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-bold shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
 					>
 						Voltar para Login
 					</Link>
