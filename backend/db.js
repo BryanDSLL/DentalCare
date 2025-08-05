@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // --- PREFERÊNCIAS DO USUÁRIO ---
 // 1. Em ambiente local, a conexão com o banco deve ser feita SEM URL, usando:
 //    host: 'localhost', database: 'DENTALCARE', user: 'postgres', password: '#abc123#', port: 5432, ssl: false
@@ -12,17 +13,14 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Configuração dinâmica da conexão
 let pool;
 
 if (process.env.NODE_ENV === 'production') {
-  // Railway ou produção: usa DATABASE_URL
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
 } else {
-  // Local: usa parâmetros explícitos, sem URL
   pool = new Pool({
     user: 'postgres',
     password: '#abc123#',
@@ -38,7 +36,6 @@ console.log(pool.options || pool.connectionParameters);
 
 export { pool };
 
-// Testa conexão ao banco na inicialização
 pool.query('SELECT 1')
   .then(() => console.log('Conexão com PostgreSQL estabelecida com sucesso!'))
   .catch((err) => {

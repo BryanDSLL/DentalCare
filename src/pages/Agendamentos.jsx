@@ -2,15 +2,12 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { servicoConsultas } from '../services/consultasService.js';
 import { servicoPacientes } from '../services/pacientesService.js';
-import { servicoConfiguracoes } from '../services/configuracoesService.js';
 import Modal from '../components/Modal';
-import ModalAviso from '../components/ModalAviso';
-import { Clock, Plus, Edit, Trash2, Calendar, MessageCircle } from 'lucide-react';
+import { Clock, Plus, Edit, Trash2, Calendar } from 'lucide-react';
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [clinicName, setClinicName] = useState('DentalCare');
   // Data inicial: hoje, Data final: hoje + 7 dias
   const today = new Date();
   const formatDate = (d) => d.toISOString().split('T')[0];
@@ -43,8 +40,6 @@ const Agendamentos = () => {
   const [authError, setAuthError] = useState(null);
   const [statusMenuOpenId, setStatusMenuOpenId] = useState(null);
   const [statusFilters, setStatusFilters] = useState({ Pendente: true, Realizado: true, Cancelado: true });
-  const [avisoAberto, setAvisoAberto] = useState(false);
-  const [avisoMsg, setAvisoMsg] = useState('');
   const statusOptions = [
     { value: 'Pendente', label: 'Pendente', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
     { value: 'Realizado', label: 'Realizado', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
@@ -89,16 +84,6 @@ const Agendamentos = () => {
   useEffect(() => {
     loadAppointmentsAsync();
     loadPatients();
-    // Busca nome da clínica das configurações
-    async function fetchClinicName() {
-      try {
-        const config = await servicoConfiguracoes.getConfiguracoes();
-        setClinicName(config?.nome || 'DentalCare');
-      } catch {
-        setClinicName('DentalCare');
-      }
-    }
-    fetchClinicName();
     // eslint-disable-next-line
   }, [dateStart, dateEnd, statusFilters]);
 
@@ -114,14 +99,6 @@ const Agendamentos = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validação: não permitir datas/horas passadas
-    const now = new Date();
-    const dataSelecionada = new Date(`${formData.date}T${formData.time}:00`);
-    if (dataSelecionada < now && !editingAppointment) {
-      setAvisoMsg('Não é possível agendar uma consulta para uma data e hora que já passaram.');
-      setAvisoAberto(true);
-      return;
-    }
     try {
       const appointmentData = {
         idpaciente: formData.patientId,
@@ -228,35 +205,6 @@ const Agendamentos = () => {
   // O backend já retorna apenas os agendamentos do período, não precisa filtrar aqui
   const filteredAppointments = appointments;
 
-  // Responsividade: detecta se é mobile
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  useEffect(() => {
-    function handleResize() {
-      setIsMobile(window.innerWidth < 768);
-    }
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Fecha o menu de status ao clicar fora
-  useEffect(() => {
-    if (statusMenuOpenId === null) return;
-    function handleClickOutside(e) {
-      const btn = document.getElementById(`status-btn-${statusMenuOpenId}`);
-      const menu = document.querySelector(`#status-menu-${statusMenuOpenId}`);
-      if (btn && btn.contains(e.target)) return;
-      if (menu && menu.contains(e.target)) return;
-      setStatusMenuOpenId(null);
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [statusMenuOpenId]);
-
-  function getWhatsappLink(numero, mensagem) {
-    const encodedMessage = encodeURIComponent(mensagem);
-    return `https://wa.me/${numero}?text=${encodedMessage}`;
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -277,14 +225,6 @@ const Agendamentos = () => {
         </button>
       </div>
     );
-  }
-
-  // Função para decidir se o menu deve abrir acima ou abaixo do botão
-  function getShouldOpenAbove(id) {
-    if (typeof window === 'undefined') return false;
-    const btn = document.getElementById(`status-btn-${id}`);
-    const spaceBelow = btn ? window.innerHeight - btn.getBoundingClientRect().bottom : 999;
-    return spaceBelow < 140;
   }
 
   return (
@@ -415,55 +355,19 @@ const Agendamentos = () => {
                       )}
                     </div>
                   </div>
-                  {/* Layout responsivo: mobile (vertical), desktop (horizontal) */}
-                  <div
-                    className={
-                      isMobile
-                        ? 'flex flex-col items-end space-y-2' // Mobile: coluna, botão em cima
-                        : 'flex items-center space-x-2' // Desktop: linha
-                    }
-                  >
-                    {/* Botão de status */}
-                    <div className="relative flex items-center space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="relative">
                       <button
                         type="button"
                         className={`px-4 py-2 min-w-[90px] text-xs rounded font-semibold focus:outline-none transition-all shadow-sm border border-gray-200 dark:border-gray-700
     ${appointment.status === 'Realizado' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : appointment.status === 'Cancelado' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'}`}
                         onClick={() => setStatusMenuOpenId(statusMenuOpenId === appointment.id ? null : appointment.id)}
                         aria-label="Alterar status"
-                        id={`status-btn-${appointment.id}`}
                       >
                         {appointment.status || 'Pendente'}
                       </button>
-                      <button
-                        type="button"
-                        className="ml-2 p-2 rounded-full bg-green-500 hover:bg-green-600 text-white shadow focus:outline-none"
-                        aria-label="WhatsApp"
-                        onClick={() => {
-                          // Busca o telefone do paciente
-                          const paciente = patients.find(p => p.id === appointment.idpaciente);
-                          const telefone = paciente?.telefone?.replace(/\D/g, '');
-                          if (!telefone) return alert('Paciente sem telefone cadastrado!');
-                          // Monta mensagem padrão
-                          const { date: formattedDate, time: formattedTime } = formatDateTime(appointment.data);
-                          const mensagem = `Olá ${paciente?.nome || ''}, lembramos que sua consulta está agendada para ${formattedDate} às ${formattedTime} na ${clinicName}.`;
-                          window.open(getWhatsappLink(`55${telefone}`, mensagem), '_blank');
-                        }}
-                      >
-                        <MessageCircle className="w-5 h-5" />
-                      </button>
                       {statusMenuOpenId === appointment.id && (
-                        <div
-                          id={`status-menu-${appointment.id}`}
-                          className={`absolute left-0 z-20 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700 w-36`}
-                          style={{
-                            top: getShouldOpenAbove(appointment.id) ? 'auto' : '100%',
-                            bottom: getShouldOpenAbove(appointment.id) ? '100%' : 'auto',
-                            left: 0,
-                            right: 'auto',
-                            minWidth: '90px',
-                          }}
-                        >
+                        <div className="absolute left-0 mt-2 z-20 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700 w-32">
                           {statusOptions.map(option => (
                             <button
                               key={option.value}
@@ -480,21 +384,18 @@ const Agendamentos = () => {
                         </div>
                       )}
                     </div>
-                    {/* Ícones de editar/excluir */}
-                    <div className={isMobile ? 'flex items-center space-x-2 mt-2' : 'flex items-center space-x-2'}>
-                      <button
-                        onClick={() => handleEdit(appointment)}
-                        className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                      >
-                        <Edit size={20} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(appointment.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-                      >
-                        <Trash2 size={20} />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleEdit(appointment)}
+                      className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                    >
+                      <Edit size={20} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(appointment.id)}
+                      className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                    >
+                      <Trash2 size={20} />
+                    </button>
                   </div>
                 </div>
               );
@@ -633,7 +534,9 @@ const Agendamentos = () => {
               <select
                 value={formData.status}
                 onChange={e => setFormData({ ...formData, status: e.target.value })}
-                className={`input ${formData.status === 'Realizado' ? 'text-green-700 dark:text-green-300' : formData.status === 'Cancelado' ? 'text-red-700 dark:text-red-300' : 'text-yellow-700 dark:text-yellow-300'}`}
+                className={`input transition-all font-semibold rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border border-gray-300 dark:border-gray-600
+    ${formData.status === 'Realizado' ? 'text-green-700 dark:text-green-300' : formData.status === 'Cancelado' ? 'text-red-700 dark:text-red-300' : formData.status === 'Pendente' ? 'text-yellow-700 dark:text-yellow-300' : ''}`}
+                style={{ color: formData.status === 'Realizado' ? '#059669' : formData.status === 'Cancelado' ? '#dc2626' : formData.status === 'Pendente' ? '#ca8a04' : undefined }}
                 required
               >
                 <option value="Pendente" className="text-yellow-700 dark:text-yellow-300">Pendente</option>
@@ -663,14 +566,6 @@ const Agendamentos = () => {
           </div>
         </form>
       </Modal>
-
-      {/* Modal de Aviso */}
-      <ModalAviso
-        isOpen={avisoAberto}
-        onClose={() => setAvisoAberto(false)}
-        title="Agendamento Inválido"
-        message={avisoMsg}
-      />
     </div>
   );
 };

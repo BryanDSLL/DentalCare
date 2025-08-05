@@ -1,3 +1,4 @@
+/* global process */
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -5,15 +6,13 @@ import jwt from 'jsonwebtoken';
 import { pool } from './db.js';
 import multer from 'multer';
 import path from 'path';
-const JWT_SECRET = 'sua_chave_secreta'; 
+import dotenv from 'dotenv';
+dotenv.config();
+const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-
-import dotenv from 'dotenv';
-dotenv.config();
 
 const upload = multer({
   dest: path.join(process.cwd(), 'uploads'),
@@ -33,7 +32,6 @@ app.get('/api/ping', async (req, res) => {
   res.json({ now: result.rows[0].now });
 });
 
-// Registro e autenticação de usuários
 app.post('/api/register', async (req, res) => {
   const { email, password } = req.body;
   const hash = await bcrypt.hash(password, 10);
@@ -96,15 +94,12 @@ app.post('/api/pacientes', authMiddleware, async (req, res) => {
   }
 });
 
-// Upload múltiplos arquivos para paciente
 app.post('/api/pacientes/:id/arquivos', authMiddleware, upload.single('arquivos'), async (req, res) => {
   const pacienteId = req.params.id;
-  const idusuario = req.user.id;
   if (!req.file) {
     return res.status(400).json({ error: 'Nenhum arquivo enviado' });
   }
   try {
-    // Remove arquivo anterior, se existir
     await pool.query('DELETE FROM arquivos_paciente WHERE paciente_id = $1', [pacienteId]);
     const file = req.file;
     const buffer = await import('fs').then(fs => fs.readFileSync(file.path));
@@ -119,14 +114,12 @@ app.post('/api/pacientes/:id/arquivos', authMiddleware, upload.single('arquivos'
   }
 });
 
-// Listar arquivos de um paciente
 app.get('/api/pacientes/:id/arquivos', authMiddleware, async (req, res) => {
   const pacienteId = req.params.id;
   const result = await pool.query('SELECT id, nome_arquivo, tipo_arquivo, data_upload FROM arquivos_paciente WHERE paciente_id = $1 ORDER BY data_upload DESC', [pacienteId]);
   res.json(result.rows);
 });
 
-// Download de arquivo
 app.get('/api/pacientes/:id/arquivos/:arquivoId', authMiddleware, async (req, res) => {
   const { id, arquivoId } = req.params;
   const result = await pool.query('SELECT nome_arquivo, tipo_arquivo, arquivo FROM arquivos_paciente WHERE id = $1 AND paciente_id = $2', [arquivoId, id]);
@@ -176,25 +169,29 @@ app.delete('/api/pacientes/:id', authMiddleware, async (req, res) => {
 });
 
 //////////////// Rotas de agendamentos ////////////////
-app.post('/api/agendamentos', authMiddleware, upload.single('arquivo'), async (req, res) => {
-  // Recebe os campos do frontend: idpaciente, data, tipo, notas, status
+app.post('/api/agendamentos', authMiddleware, async (req, res) => {
   const { idpaciente, data, tipo, notas, status } = req.body;
   const idusuario = req.user.id;
+  if (!idpaciente || !data || !tipo) {
+    return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+  }
   let arquivo = null;
+
+  // Se houver arquivo, processa upload
   if (req.file) {
     arquivo = req.file.filename + '_' + req.file.originalname;
-    // Renomeia para manter o nome original
     const fs = await import('fs');
     fs.renameSync(req.file.path, path.join(req.file.destination, arquivo));
   }
+
   try {
     const result = await pool.query(
       'INSERT INTO agendamentos (idusuario, idpaciente, data, tipo, notas, arquivo, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
       [idusuario, idpaciente, data, tipo, notas, arquivo, status || 'Pendente']
     );
     res.json(result.rows[0]);
-  } catch {
-    res.status(400).json({ error: 'Erro ao agendar' });
+  } catch (err) {
+    res.status(400).json({ error: 'Erro ao criar agendamento', details: err.message });
   }
 });
 
@@ -210,18 +207,22 @@ app.get('/api/agendamentos', authMiddleware, async (req, res) => {
       statusArray = Array.isArray(status) ? status : [status];
     }
   }
-  // Se nenhum status estiver selecionado, retorna vazio
   if (statusArray.length === 0) {
     return res.json([]);
   }
+
   let query = "SELECT id, idusuario, idpaciente, to_char(data, 'YYYY-MM-DD HH24:MI:SS') as data, tipo, notas, status FROM agendamentos WHERE idusuario = $1";
+  
   let params = [idusuario];
+  
   let paramIdx = 2;
+  
   if (start && end) {
     query += ` AND data::date >= $${paramIdx}::date AND data::date <= $${paramIdx + 1}::date`;
     params.push(start, end);
     paramIdx += 2;
   }
+  
   if (statusArray.length > 0) {
     query += ` AND status = ANY($${paramIdx})`;
     params.push(statusArray);
@@ -273,7 +274,7 @@ app.get('/api/configuracoes', authMiddleware, async (req, res) => {
   const idusuario = req.user.id;
   const result = await pool.query('SELECT * FROM configuracoes WHERE idusuario = $1 LIMIT 1', [idusuario]);
   if (result.rows.length === 0) {
-    // Retorna valores padrão se não houver registro
+
     return res.json({
       nome: '',
       endereco: '',
@@ -290,23 +291,25 @@ app.post('/api/configuracoes', authMiddleware, async (req, res) => {
   const idusuario = req.user.id;
   const { nome, endereco, telefone, email, horario_inicio, horario_fim } = req.body;
   try {
-    // Verifica se já existe registro
+   
+
     const result = await pool.query('SELECT id FROM configuracoes WHERE idusuario = $1', [idusuario]);
     if (result.rows.length === 0) {
-      // Insere novo
+
       const insert = await pool.query(
         'INSERT INTO configuracoes (idusuario, nome, endereco, telefone, email, horario_inicio, horario_fim) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
         [idusuario, nome, endereco, telefone, email, horario_inicio, horario_fim]
       );
       return res.json(insert.rows[0]);
     } else {
-      // Atualiza existente
+ 
       const update = await pool.query(
         'UPDATE configuracoes SET nome=$1, endereco=$2, telefone=$3, email=$4, horario_inicio=$5, horario_fim=$6 WHERE idusuario=$7 RETURNING *',
         [nome, endereco, telefone, email, horario_inicio, horario_fim, idusuario]
       );
       return res.json(update.rows[0]);
     }
+
   } catch (err) {
     console.error('Erro ao salvar configurações:', err);
     res.status(500).json({ error: 'Erro ao salvar configurações', details: err.message });
